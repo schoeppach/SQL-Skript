@@ -1,0 +1,2682 @@
+Tag 1:
+
+use standard;
+go
+
+-- Select ohne Datenquellen
+
+select getdate()                            -- aktuelles Datum
+
+select 5 * 20;
+
+-- Select mit Datenquellen
+
+-- alle Angaben zu allen Lieferanten
+
+select *from lieferant;
+
+-- Der Stern sollte nur fuer Testabfragen verwendet werden
+-- Programmierer verwenden die Spaltennamen.
+
+select lnr, lname, status, lstadt
+from lieferant;
+
+-- vollqualifierter Name
+
+select lnr, lname, status, lstadt
+from sql16serv1.standard.dbo.lieferant;
+
+-- Aus der DB Standard heraus soll die Tabelle person in person der DB
+-- AdventureWorks2012 abgefragt werden. DAbei soll Datenbankkontex des
+-- aufrufenden Stapels nicht geaendert (use...) werden.
+
+select *
+from AdventureWorks2012.person.person;
+
+
+-- ausgewaehlte Spaltenwerte
+-- Wohnorte und Namen aller Lieferanten
+
+select lstadt, lname
+from lieferant
+
+-- ausgewaehlte Datensaetze
+-- dafuer wird die Where - Klausel benoetigt
+
+-- Vergleichsoperatoren
+
+-- Nummern, Namen und Farbe der Artikel die in Hamburg lagern
+
+select anr, aname, farbe from artikel
+where astadt = 'Hamburg';
+
+-- Alle Lieferungen nach dem 01.08.90
+
+select * from lieferung
+where ldatum > '01.08.1990';
+
+select * from lieferung
+where ldatum > '1990-08-01';
+
+-- Alle Lieferungen mit einer Liefermenge von 200 Stueck
+
+select * from lieferung
+where lmenge = 200;
+
+-- Bereiche angeben
+
+-- mit between koennen Bereiche definiert werden, Die angegebene Grenzen
+-- (von-bis) sind einschliesslich
+
+-- Alle Lieferungen zwischen dem 20.07.90 und dem 18.08.90
+
+select *
+from lieferung
+where ldatum between '20.07.90' and '18.08.90';
+
+select * from lieferung
+where ldatum >= '20.07.90' and ldatum <= '18.08.90';
+
+-- Alle Liefrungen die nicht zwischen dem 20.07.90 und dem 18.08.90
+-- geliefert wurden
+
+select *
+from lieferung
+where ldatum not between '20.07.90' and '18.08.90';
+
+-- between wird hauptsaechlich auf numerische- und Datumsdatentypen
+-- angewendet.
+
+-- Alle Lieferanten deren Namen mit dem Buchstaben B bis J beginnen
+
+select * from lieferant
+where lname between 'B' and 'J';
+
+-- Jonas wird nicht angezeigt. Warum?
+
+select * from lieferant
+where lname between 'B' and 'Jz';
+
+-- Dafuer verwendet man like
+
+---------------------------------------------------------------------------
+
+-- Listen
+
+-- Alle Lieferanten die in Hamburg oder in Aachen wohnen
+
+select * from lieferant
+where lstadt = 'Hamburg', 'Aachen'              -- geht nicht
+
+select * from lieferant
+where lstadt in('Hamburg', 'Aachen');
+
+select * from lieferant
+where lstadt = 'Hamburg' or lstadt = 'Aachen';
+
+-- Alle Lieferanten die nicht in Hamburg oder in Aachen wohnen
+
+select * from lieferant
+where lstadt not in('Hamburg', 'Aachen');
+
+-----------------------------------------------------------
+
+-- neuen Lieferanten aufnehmen.
+
+insert into lieferant values('L10','Schul%ze',null, null);
+
+select * from lieferant;
+
+-- LIKE Operator
+
+-- kann nur auf alfanummerische Zeichen angewendet werden.
+-- verwendete PLatzhalter (Jokerzeichen)
+
+-- Alle Lieferanten die an einem Ort wohnen der mit dem Buchstaben L beginnt.
+
+select * from lieferant
+where lstadt like 'L%';
+
+-- Alle Lieferanten deren Namen an zweiter Stelle den Buchstaben L haben.
+
+select * from lieferant
+where lname like '_L%';
+
+-- Alle Lieferanten deren Namen an zweiter Stelle den Buchstaben L haben und
+-- an vorletzter Stelle den Buchstaben R.
+
+select * from lieferant
+where lname like '_L%R_';
+
+insert into lieferant values('L11','Jach',null, null);
+
+insert into lieferant values('L12','Kulesch',null, null);
+
+-- Lieferanten deren Namen mit dem Buchstaben B bis J beginnen
+
+select * from lieferant
+where lname like '[B-J]%';
+
+select * from lieferant
+where lname like '[BJ]%';
+
+--Alle Lieferanten in deren Namen an keiner Stelle ein A steht
+
+select * from lieferant
+where lname like '%[^a]%';                --GGA ---> Katzenklo    
+
+-- besser
+
+select * from lieferant
+where lname not like '%a%';
+
+-- Gesucht sind die Lieferanten in deren Namen ein % - Zeichen steht
+
+select * from lieferant
+where lname like '%%%';                 --- ???????????
+
+-- Da % ein Platzhalter ist , muss man mit einer Maske arbeiten.
+
+select * from lieferant
+where lname like '%y%%' escape 'y';
+
+----------------------------------------------------
+
+-- Alle Lieferanten deren Wohnort nicht bekannt ist
+
+select * from lieferant
+where lstadt = null;                    -- kein Fehler, sondern eine leere Menge
+                                        -- jeder Vergleich mit Unbekannt ergibt
+                                        -- Unbekannt
+
+insert into lieferant values('L13','Schoeppach','99','Erfurt');
+
+select * from lieferant;
+
+-- Alle Lieferanten ohne Statuswert sollen mit einem Angenommenen Status von 50 
+-- angezeigt werden
+
+select lnr, lname, isnull(status,50) as [status], lstadt
+from lieferant;
+
+---------------------------------------------------------------------
+
+-- Arbeit mit mehreren Bedingungen in der WHERE - Klausel
+
+select * from artikel
+where gewicht > 15 and astadt like '[E-L]%'or amenge > 700;
+
+select * from artikel
+where gewicht > 15 and(astadt like '[E-L]%'or amenge > 700);
+
+1.
+
+select *
+from lieferung
+where ldatum between '05.08.1990' and '06.08.1990'
+
+select * 
+from lieferung
+where ldatum in ('05.08.1990', '06.08.1990')
+
+select * 
+from lieferung
+where ldatum >= '05.08.1990' and ldatum <= '06.08.1990';
+
+2.
+
+select  anr, aname from artikel
+where Farbe in('rot','blau') and astadt ='Hamburg' or 
+amenge between 900 and 1500 and aname like '%a%';
+
+3.
+
+select * from lieferant
+where lname between 'A' and 'G';
+
+select * from lieferant
+where lname like '[a-g]%';
+
+4.
+
+-- Lieferanten mit BCS am Anfang und an 3. Stelle ein a
+
+select * from lieferant
+where lname like '[BCS]_a%_' and lstadt not like 'ried%';
+
+-	Ueberpruefen mit
+
+insert into lieferant values('L20', 'Braun', 5, 'Riednordhausen');
+go
+
+5.
+
+select * from artikel
+where gewicht = 0 or gewicht is null;
+
+select * from artikel
+
+insert into artikel values('A11', 'Kurwa', 'rot', null, 'Riednordhausen', 100)
+
+insert into artikel values('A12', 'Lauch', 'blau', 0, 'Mittelried', 1200)
+
+Tag 2:
+
+use standard
+go
+
+select anr, aname, gewicht, astadt, amenge
+from artikel
+where anr in('A01','A02','A03')
+
+-- Ergebnisse formatieren
+
+-- 1. Literale (erlaeuternder Text)
+
+-- beschreibt den Inhalt einer Spalte
+
+select anr, aname, gewicht 'Gramm', astadt, amenge 'Stueck'
+from artikel
+where anr in('A01','A02','A03')
+
+-	aendern der Spaltennamen
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+where anr in('A01','A02','A03')
+
+--oder
+
+select anr  [Artikelnummer], aname [Artikelname], 
+gewicht [Gewicht], 'Gramm' [Gewichtseinheit], 
+astadt [Lagerort], amenge [Lagermenge], 'Stueck' [Lagereinheit]
+from artikel
+where anr in('A01','A02','A03')
+
+--oder
+
+select   [Artikelnummer] = anr, [Artikelname] = aname,  
+  [Gewicht] = gewicht,  [Gewichtseinheit] = 'Gramm', 
+  [Lagerort] = astadt, [Lagermenge] = amenge, [Lagereinheit] = 'Stueck'
+from artikel
+where anr in('A01','A02','A03')
+
+-- Sortieren der Ergebnismenge
+-- das Ergebnis soll nach dem Artikelnamen aufsteigend sortiert werden
+-- und bei gleichen Artikelnamen nach dem Lagerort absteigend sortiert werden
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by aname asc, astadt desc;
+
+-- oder
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by [Artikelnummer] asc, [Lagerort] desc;
+
+-- oder
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by 2 asc, 5 desc;
+
+-- Entfernen doppelter Datensaetze aus dem Ergebnis
+
+-- Schluesselwort DISTINCT entfernt doppelte DS aus dem Ergebnis
+-- Distinct wird eingesetzt
+--                  1. in der Select Liste
+--                  2. in Argument einer Aggregatfunktion
+
+-- Welche Lieferungen (lnr) haben geliefert?
+
+select lnr from lieferung       -- 12 DS mit redundanten Informationen
+
+select distinct lnr from lieferung;     --4DS
+
+select distinct lnr from lieferant;     -- Sinnlos, unverschaemt blamabel
+
+-- CASE Ausdruecke
+
+-- Einfaches CASE
+-- es wird ein Ausdruck mit mehreren anderen Ausdruecken verglichen um das
+-- Resultset zu finden
+
+select lnr, lname, lstadt, case lstadt
+                           when 'Hamburg' then 'wohnt im Norden'
+                           when 'Ludwigshafen' then 'wohnt im Westen'
+                           else 'wohnt auch'
+                           end as [Bewertung]
+
+from lieferant;
+
+delete lieferant where lnr > 'L05';
+
+-- komplexes CASE
+-- hierbei werden wie bei einer WHERE - Klausel Bollsche Ausdruecke 
+-- Ueberprueft und bei Uebereinstimmungen ein Resultset zurueckgegeben
+
+select anr, aname, amenge, farbe, 
+       case
+       when amenge = 1200 and farbe = 'gruen' then 'toller Artikel'
+       when amenge = 1300 and farbe = 'blau' then 'noch toller'
+       else 'auch toll'
+       end as [Bewertung]
+from artikel;
+
+-- Berechnen von Ergebnismengen und arbeiten mit Funktionen
+
+-- Arithmetische Operatoren
+
+select 2 + 6;
+select 3 - 9;
+select 2 * 3;
+select 2 * 3.3;
+select 5 / 2;       -- Ganzzahl der Division
+select 5 / 2.0;     -- korrektes Ergebnis
+select 5 % 2;       -- ganzzahliger Divisionsrest
+
+select anr, aname, gewicht * 0.001 as [GEwicht in Kilo],
+       amenge * gewicht * 0.001 as [Gesamtlagergewicht]
+from artikel;
+
+-- Operator + fuer die Verkettung von Zeichenfolgen
+
+select 'Der Lieferant' + lname + ' (' + lnr + '), wonht in ' +
+        lstadt + ' und hat einen Status von ' + cast(status as varchar(10))
+from lieferant;
+
+-- Skalare Funktionen
+
+select lname, DATALENGTH(lname) as [Anzahl Byte] len(lname) as[Anzahl Zeichen]
+from lieferant;
+
+select host_name();             -- Name des Servers auf dem SQL Server laeuft
+select host_id();               -- ID der aktuellen Arbeitsstation
+
+select user_name();             -- Datenbankbenutzername
+select user_id();
+select suser_name()             -- Login
+select suser_id();
+
+select newid();
+
+-- mathematische Funktionen
+
+select round(233.871, 2);       -- auf/abrunden
+select round(233.871, -2);
+
+select rand();                  -- eine zufuellige Zahl zwischen 0 und 1
+select round(rand() * 100,0)
+
+-- Zeichenfolge Funktionen
+
+select char(39);                -- ASCI Zeichen Hochkomma
+
+select replace('Hustensaftschmuggler', 'saft', 'bier');
+
+select replicate('Bier' , 10); 
+
+-- Namen und Wohnort der Lieferanten in einer Spalte mit einem Abstand von 20 
+-- Leerzeichen
+
+select lname + space(20) + lstadt
+from lieferant;
+
+--Gesucht ist der zweite Buchstabe jedes Lieferantennamen
+
+select lname, substring(lname,2,1) [zweiter Buchstabe]
+from lieferant
+
+-- der Chef moechte die Lieferantennummern statt mit einem L mit einem K
+-- beginnen lassen und der numerische Teil soll dreistellig sein und bei
+-- 101 beginnen
+
+select lnr
+from lieferant;
+
+--numerischen Teil und alfanumerischen Teil trenen
+
+select substring(lnr,2,2)
+from lieferant
+
+-- Ziffern in Zahlen umwandeln
+
+select cast(substring(lnr,2,2) as int)
+from lieferant
+
+-- um 100 erhoehen
+
+select cast(substring(lnr,2,2) as int) +100
+from lieferant
+
+-- vor die Zahl das K setzten, dazu muss die Zahl vorher String werden
+
+select 'K' + cast(cast(substring(lnr,2,2) as int) +100 as varchar(4))
+from lieferant;
+
+-- Datums- und Zeitfunktion
+
+select getdate();
+select year(getdate());             -- Ergebnis numersich
+select month(getdate());            -- Ergebnis numersich
+select day(getdate());              -- Ergebnis numersich
+
+select lnr, ldatum, day(ldatum), month(ldatum), year(ldatum)
+from lieferung;
+
+select date();
+
+-- bestimmen welcher Wochentag der Wochenbeginn ist
+
+-- fuer Deutschland
+
+select @@datefirst;                 -- 1 --> Montag
+
+-- fuer USA
+
+set language us_englisch;
+select @@datefirst;                 -- 7 --> Sonntag
+
+-- Russia
+set language russian;
+select @@datefirst;                 -- 1 --> Montag
+
+-- Datumsfuntionen zum Berechnen von Datumswerten
+
+select datename(dw,getdate());      -- Mittwoch --> alfanumerisch
+select datename(mm,getdate());      -- Juni     --> alfanumerisch
+select datename(yyyy,getdate());    -- 2022     --> alfanumerisch
+
+select datepart(dd,getdate());      -- 1        --> numerisch
+select datepart(mm,getdate());      -- 6        --> numerisch
+select datepart(yyyy,getdate());    -- 2022     --> numerisch
+
+-- Alle im August 1990 durchgefuehrten Lieferungen
+
+select * from lieferung
+where datepart(mm,ldatum) = 8
+and datepart (yyyy,ldatum) = 1990;
+
+-- Zahlungstermin 37 Tage nach  Lieferdatum
+
+select lnr, anr, ldatum, dateadd(dd, 37, ldatum) as [Zahlung]
+from lieferung;
+
+-- Anzahl der Monate seit Lieferung bis Heute
+
+select lnr, anr, ldatum, datediff(mm,ldatum,getdate()) as [Anzahl Monate]
+from lieferung;
+
+-- Datum Konvertieren
+
+-- nicht mit cast() konvertieren, da sonst unerwartete Ergebnisse
+-- auftreten
+
+-- Lieferungen in einem deutschen Format (dd.mm.yyyy) darstellen.
+
+select lnr, anr, cast(ldatum as char(10)) from Lieferung
+
+-- besser ist die Funktion convert
+
+select lnr, anr, convert(char(10),ldatum,104) from Lieferung;
+
+-	Uebung 3
+
+1.
+
+-- Schreiben sie eine Abfrage auf Tabelle Lieferung 
+-- in der Datenbank Standard, welche ihnen nachstehendes 
+-- Ergebnis liefert
+
+select anr as [Artikelnummer], lmenge as [Liefermenge], 
+datename(dw,ldatum)+' der '+
+datename(dd,ldatum)+'. '+
+datename(mm,ldatum)+' '+
+datename(yyyy,ldatum) as [Lieferdatum]
+from lieferung;
+
+2.
+
+-- Schreiben sie eine Abfrage auf Tabelle Lieferung 
+-- in der Datenbank Standard, welche ihnen nachstehendes  
+-- Ergebnis liefert
+
+select anr as 'Artikelnummer', convert(char(10),ldatum,104) as 'Lieferdatum',
+'vor ' + cast(datediff(dd, convert(datetime,ldatum,104), getdate())/365 as varchar(10)) +
+' Jahren und ' +
+cast(cast(datediff(dd, ldatum, getdate()) % 365.25/30.4375 as int) as varchar(2))
++ ' Monaten.' as 'Die Lieferung ...'
+from lieferung;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tag 2:
+
+use standard
+go 
+
+-- Gruppieren und Zusammenfassen von Dateien
+
+-- Aggregatfunktionen
+
+-- sie beziehen sich auf die DAten einer Spalte der Tabelle (ausser count)
+-- und geben einen Zusammenfassungswert zurueck
+
+-- das Ergebnis ist genau ein Wert
+
+-- all Aggregatfunktionen ignorieren NULL-Marken
+
+-- die fuenf am haeufigsten gebrauchten Aggregatfunktionen sind
+
+--      avg     (average) Durchschnitt der nummerischen Spaltenwerte
+--      max     der groesste Spaltenwert
+--      min     der kleinste Spaltenwert
+--      sum     die Summe der nummerischen Spaltenwerte 
+--      count   die Anzahl der Spaltenwerte
+
+select  sum(lmenge) as [Liefermenge gesamt],
+        max(lmenge) as [groesste Liefermenge],
+        min(lmenge) as [kleinste Liefermenge],
+        avg(lmenge) as [durchschnittliche Liefermenge],
+        count(lnr) as [Anzahl der Lieferungen]
+from lieferung;
+
+-- Die groesste Liefermenge
+
+select max(lmenge) from lieferung;
+
+-- Neugierig: ich will wissen wer das ist!
+
+select max(lmenge),lnr from lieferung;   -- Fehler
+
+-- Alle Spalten ein der Select-Liste die kein Argument einer Aggregatfunktion
+-- sind muessen in einer group by Klausel stehen
+
+select max(lmenge),lnr from lieferung
+group by lnr;
+
+-- das veraendert die Fragestellung
+-- die groesste Lieferung eines jeden Lieferanten
+
+-- Agregatfunktion COUNT
+
+insert into Lieferant values('L10','Meier',null,'Erfurt')
+
+-- Anzahl der Lieferanten
+
+select count(lnr) from lieferant;       -- immer richtig, weil die Primaer-Spalte 
+                                        -- als Argument verwendet wird
+
+select count(*) from lieferant;         -- immer richtig, weil es in einer Tabelle
+                                        -- keine leeren Datensaetze gibt
+                                        -- count(*) zaehlt die DS 
+   --(Datensaetze) der
+                                        -- angebenen Tabelle
+
+select count(status) from lieferant;    -- nicht immer richtig,weil die Spalte 
+                                        -- Unbekannte WErte enthalten kann.
+
+-- alle Aggregatfunktionen ignorieren NULL-Marken
+
+select count(lnr) from lieferant;       -- 6 DS
+select count(status) from lieferant;    -- 5 DS
+
+---------------------------------------------------------------
+select *
+from lieferant
+
+-- Das groesste Gesamtlagergewicht aller Artikel in Kilo
+
+select gewicht * 0.001 * amenge as [Gesamtlagergewicht]
+from artikel;
+
+select max(gewicht * 0.001 * amenge)
+from artikel;
+
+-- die letzte Liefereung von 'A02'
+
+select max(ldatum) from lieferung where anr = 'A02'
+
+-- Anzahl der Lieferanten die geliefert haben
+
+select count(lnr) from lieferung;          -- FALSCH -- liefert die Anzahl 
+                                                     -- der Lieferungen
+
+select count(distinct lnr) from lieferung; -- RICHTIG
+
+-- Gesucht ist die groesste Status der Liefranten am jeweiligen
+-- Wohnort ...
+
+select lstadt, max(status)
+from lieferant
+group by lstadt;
+
+-- ... wenn der duschschnittliche Statuswert am jeweiligen Wohnort nicht kleiner
+-- als 15 ist
+
+select lstadt, max(status)
+from lieferant
+where avg(status) > 15
+group by lstadt;                -- FALSCH
+
+-- in einer Where -KLausel darf niemals eine Aggregatfunktion stehen.
+-- Die Bedingung ist eine Bedingung fuer die Gruppe!
+
+select lstadt, max(status)
+from lieferant
+group by lstadt
+having avg(status) > 15;
+
+-- ohne die Aachner Lieferanten
+
+select lstadt, max(status)
+from lieferant
+group by lstadt
+having avg(status) > 15 and lstadt <> 'Aachen';     -- Unanstaendig
+
+select lstadt, max(status)
+from lieferant
+where lstadt <> 'Aachen'
+group by lstadt
+having avg(status) > 15;                            -- RICHTIG
+
+Tag 1:
+use standard;
+go
+
+-- Select ohne Datenquellen
+
+select getdate()                            -- aktuelles Datum
+
+select 5 * 20;
+
+-- Select mit Datenquellen
+
+-- alle Angaben zu allen Lieferanten
+
+select *from lieferant;
+
+-- Der Stern sollte nur fuer Testabfragen verwendet werden
+-- Programmierer verwenden die Spaltennamen.
+
+select lnr, lname, status, lstadt
+from lieferant;
+
+-- vollqualifierter Name
+
+select lnr, lname, status, lstadt
+from sql16serv1.standard.dbo.lieferant;
+
+-- Aus der DB Standard heraus soll die Tabelle person in person der DB
+-- AdventureWorks2012 abgefragt werden. DAbei soll Datenbankkontex des
+-- aufrufenden Stapels nicht geaendert (use...) werden.
+
+select *
+from AdventureWorks2012.person.person;
+
+
+-- ausgewaehlte Spaltenwerte
+-- Wohnorte und Namen aller Lieferanten
+
+select lstadt, lname
+from lieferant
+
+-- ausgewaehlte Datensaetze
+-- dafuer wird die Where - Klausel benoetigt
+
+-- Vergleichsoperatoren
+
+-- Nummern, Namen und Farbe der Artikel die in Hamburg lagern
+
+select anr, aname, farbe from artikel
+where astadt = 'Hamburg';
+
+-- Alle Lieferungen nach dem 01.08.90
+
+select * from lieferung
+where ldatum > '01.08.1990';
+
+select * from lieferung
+where ldatum > '1990-08-01';
+
+-- Alle Lieferungen mit einer Liefermenge von 200 Stueck
+
+select * from lieferung
+where lmenge = 200;
+
+-- Bereiche angeben
+
+-- mit between koennen Bereiche definiert werden, Die angegebene Grenzen
+-- (von-bis) sind einschlieslich
+
+-- Alle Lieferungen zwischen dem 20.07.90 und dem 18.08.90
+
+select *
+from lieferung
+where ldatum between '20.07.90' and '18.08.90';
+
+select * from lieferung
+where ldatum >= '20.07.90' and ldatum <= '18.08.90';
+
+-- Alle Liefrungen die nicht zwischen dem 20.07.90 und dem 18.08.90
+-- geliefert wurden
+
+select *
+from lieferung
+where ldatum not between '20.07.90' and '18.08.90';
+
+-- between wird hauptsaechlich auf numerische- und Datumsdatentypen
+-- angewendet.
+
+-- Alle Lieferanten deren Namen mit dem Buchstaben B bis J beginnen
+
+select * from lieferant
+where lname between 'B' and 'J';
+
+-- Jonas wird nicht angezeigt. Warum?
+
+select * from lieferant
+where lname between 'B' and 'Jz';
+
+-- Dafuer verwendet man like
+
+---------------------------------------------------------------------------
+
+-- Listen
+
+-- Alle Lieferanten die in Hamburg oder in Aachen wohnen
+
+select * from lieferant
+where lstadt = 'Hamburg', 'Aachen'              -- geht nicht
+
+select * from lieferant
+where lstadt in('Hamburg', 'Aachen');
+
+select * from lieferant
+where lstadt = 'Hamburg' or lstadt = 'Aachen';
+
+-- Alle Lieferanten die nicht in Hamburg oder in Aachen wohnen
+
+select * from lieferant
+where lstadt not in('Hamburg', 'Aachen');
+
+-----------------------------------------------------------
+
+-- neuen Lieferanten aufnehmen.
+
+insert into lieferant values('L10','Schul%ze',null, null);
+
+select * from lieferant;
+
+-- LIKE Operator
+
+-- kann nur auf alfanummerische Zeichen angewendet werden.
+-- verwendet PLatzhalter (Jokerzeichen)
+
+-- Alle Lieferanten die an einem Ort wohnen der mit dem Buchstaben L beginnt.
+
+select * from lieferant
+where lstadt like 'L%';
+
+-- Alle Lieferanten deren Namen an zweiter Stelle den Buchstaben L haben.
+
+select * from lieferant
+where lname like '_L%';
+
+-- Alle Lieferanten deren Namen an zweiter Stelle den Buchstaben L haben und
+-- an vorletzter Stelle den Buchstaben R.
+
+select * from lieferant
+where lname like '_L%R_';
+
+insert into lieferant values('L11','Jach',null, null);
+
+insert into lieferant values('L12','Kulesch',null, null);
+
+-- Lieferanten deren Namen mit dem Buchstaben B bis J beginnen
+
+select * from lieferant
+where lname like '[B-J]%';
+
+select * from lieferant
+where lname like '[BJ]%';
+
+--Alle Lieferanten in deren Namen an keiner Stelle ein A steht
+
+select * from lieferant
+where lname like '%[^a]%';                --GGA ---> Katzenklo    
+
+-- besser
+
+select * from lieferant
+where lname not like '%a%';
+
+-- Gesucht sind die Lieferanten in deren Namen ein % - Zeichen steht
+
+select * from lieferant
+where lname like '%%%';                 --- ???????????
+
+-- Da % ein Platzhalter ist , muss man mit einer Maske arbeiten.
+
+select * from lieferant
+where lname like '%y%%' escape 'y';
+
+----------------------------------------------------
+
+-- Alle Lieferanten deren Wohnort nicht bekannt ist
+
+select * from lieferant
+where lstadt = null;                    -- kein Fehler, sondern eine leere Menge
+                                        -- jeder Vergleich mit Unbekannt ergibt
+                                        -- Unbekannt
+
+insert into lieferant values('L13','Schoeppach','99','Erfurt');
+
+select * from lieferant;
+
+-- Alle Lieferanten ohne Statuswert sollen mit einem Angenommenen Status von 50 
+-- angezeigt werden
+
+select lnr, lname, isnull(status,50) as [status], lstadt
+from lieferant;
+
+---------------------------------------------------------------------
+
+-- Arbeit mit mehreren Bedingungen in der WHERE - Klausel
+
+select * from artikel
+where gewicht > 15 and astadt like '[E-L]%'or amenge > 700;
+
+select * from artikel
+where gewicht > 15 and(astadt like '[E-L]%'or amenge > 700);
+
+1.
+
+select *
+from lieferung
+where ldatum between '05.08.1990' and '06.08.1990'
+
+select * 
+from lieferung
+where ldatum in ('05.08.1990', '06.08.1990')
+
+select * 
+from lieferung
+where ldatum >= '05.08.1990' and ldatum <= '06.08.1990';
+
+2.
+
+select  anr, aname from artikel
+where Farbe in('rot','blau') and astadt ='Hamburg' or 
+amenge between 900 and 1500 and aname like '%a%';
+
+3.
+
+select * from lieferant
+where lname between 'A' and 'G';
+
+select * from lieferant
+where lname like '[a-g]%';
+
+4.
+
+-- Lieferanten mit BCS am Anfang und an 3. Stelle ein a
+
+select * from lieferant
+where lname like '[BCS]_a%_' and lstadt not like 'ried%';
+
+-	Ueberpruefen mit
+
+insert into lieferant values('L20', 'Braun', 5, 'Riednordhausen');
+go
+
+5.
+
+select * from artikel
+where gewicht = 0 or gewicht is null;
+
+select * from artikel
+
+insert into artikel values('A11', 'Kurwa', 'rot', null, 'Riednordhausen', 100)
+
+insert into artikel values('A12', 'Lauch', 'blau', 0, 'Mittelried', 1200)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tag 3:
+
+use standard
+go
+
+select anr, aname, gewicht, astadt, amenge
+from artikel
+where anr in('A01','A02','A03')
+
+-- Ergebnisse formatieren
+
+-- 1. Literale (erlaeuternder Text)
+
+-- beschreibt den Inhalt einer Spalte
+
+select anr, aname, gewicht 'Gramm', astadt, amenge 'Stueck'
+from artikel
+where anr in('A01','A02','A03')
+
+-	aendern der Spaltennamen
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+where anr in('A01','A02','A03')
+
+--oder
+
+select anr  [Artikelnummer], aname [Artikelname], 
+gewicht [Gewicht], 'Gramm' [Gewichtseinheit], 
+astadt [Lagerort], amenge [Lagermenge], 'Stueck' [Lagereinheit]
+from artikel
+where anr in('A01','A02','A03')
+
+--oder
+
+select   [Artikelnummer] = anr, [Artikelname] = aname,  
+  [Gewicht] = gewicht,  [Gewichtseinheit] = 'Gramm', 
+  [Lagerort] = astadt, [Lagermenge] = amenge, [Lagereinheit] = 'Stueck'
+from artikel
+where anr in('A01','A02','A03')
+
+-- Sortieren der Ergebnismenge
+-- das Ergebnis soll nach dem Artikelnamen aufsteigend sortiert werden
+-- und bei gleichen Artikelnamen nach dem Lagerort absteigend sortiert werden
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by aname asc, astadt desc;
+
+-- oder
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by [Artikelnummer] asc, [Lagerort] desc;
+
+-- oder
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by 2 asc, 5 desc;
+
+-- Entfernen doppelter Datensaetze aus dem Ergebnis
+
+-- Schluesselwort DISTINCT entfernt doppelte DS aus dem Ergebnis
+-- Distinct wird eingesetzt
+--                  1. in der Select Liste
+--                  2. in Argument einer Aggregatfunktion
+
+-- Welche Lieferungen (lnr) haben geliefert?
+
+select lnr from lieferung       -- 12 DS mit redundanten Informationen
+
+select distinct lnr from lieferung;     --4DS
+
+select distinct lnr from lieferant;     -- Sinnlos, unverschaemt blamabel
+
+-- CASE Ausdruecke
+
+-- Einfaches CASE
+-- es wird ein Ausdruck mit mehreren anderen Ausdruecken verglichen um das
+-- Resultset zu finden
+
+select lnr, lname, lstadt, case lstadt
+                           when 'Hamburg' then 'wohnt im Norden'
+                           when 'Ludwigshafen' then 'wohnt im Westen'
+                           else 'wohnt auch'
+                           end as [Bewertung]
+
+from lieferant;
+
+delete lieferant where lnr > 'L05';
+
+-- komplexes CASE
+-- hierbei werden wie bei einer WHERE - Klausel Bollsche Ausdruecke 
+-- Ueberprueft und bei Uebereinstimmungen ein Resultset zurueckgegeben
+
+select anr, aname, amenge, farbe, 
+       case
+       when amenge = 1200 and farbe = 'gruen' then 'toller Artikel'
+       when amenge = 1300 and farbe = 'blau' then 'noch toller'
+       else 'auch toll'
+       end as [Bewertung]
+from artikel;
+
+-- Berechnen von Ergebnismengen und arbeiten mit Funktionen
+
+-- Arithmetische Operatoren
+
+select 2 + 6;
+select 3 - 9;
+select 2 * 3;
+select 2 * 3.3;
+select 5 / 2;       -- Ganzzahl der Division
+select 5 / 2.0;     -- korrektes Ergebnis
+select 5 % 2;       -- ganzzahliger Divisionsrest
+
+select anr, aname, gewicht * 0.001 as [GEwicht in Kilo],
+       amenge * gewicht * 0.001 as [Gesamtlagergewicht]
+from artikel;
+
+-- Operator + fuer die Verkettung von Zeichenfolgen
+
+select 'Der Lieferant' + lname + ' (' + lnr + '), wonht in ' +
+        lstadt + ' und hat einen Status von ' + cast(status as varchar(10))
+from lieferant;
+
+-- Skalare Funktionen
+
+select lname, DATALENGTH(lname) as [Anzahl Byte] len(lname) as[Anzahl Zeichen]
+from lieferant;
+
+select host_name();             -- Name des Servers auf dem SQL Server laeuft
+select host_id();               -- ID der aktuellen Arbeitsstation
+
+select user_name();             -- Datenbankbenutzername
+select user_id();
+select suser_name()             -- Login
+select suser_id();
+
+select newid();
+
+-- mathematische Funktionen
+
+select round(233.871, 2);       -- auf/abrunden
+select round(233.871, -2);
+
+select rand();                  -- eine zufaellige Zahl zwischen 0 und 1
+select round(rand() * 100,0)
+
+-- Zeichenfolge Funktionen
+
+select char(39);                -- ASCI Zeichen Hochkomma
+
+select replace('Hustensaftschmuggler', 'saft', 'bier');
+
+select replicate('Bier' , 10); 
+
+-- Namen und Wohnort der Lieferanten in einer Spalte mit einem Abstand von 20 
+-- Leerzeichen
+
+select lname + space(20) + lstadt
+from lieferant;
+
+--Gesucht ist der zweite Buchstabe jedes Lieferantennamen
+
+select lname, substring(lname,2,1) [zweiter Buchstabe]
+from lieferant
+
+-- der Chef moechte die Lieferantennummern statt mit einem L mit einem K
+-- beginnen lassen und der numerische Teil soll dreistellig sein und bei
+-- 101 beginnen
+
+select lnr
+from lieferant;
+
+--numerischen Teil und alfanumerischen Teil trenen
+
+select substring(lnr,2,2)
+from lieferant
+
+-- Ziffern in Zahlen umwandeln
+
+select cast(substring(lnr,2,2) as int)
+from lieferant
+
+-- um 100 erhoehen
+
+select cast(substring(lnr,2,2) as int) +100
+from lieferant
+
+-- vor die Zahl das K setzten, dazu muss die Zahl vorher String werden
+
+select 'K' + cast(cast(substring(lnr,2,2) as int) +100 as varchar(4))
+from lieferant;
+
+-- Datums- und Zeitfunktion
+
+select getdate();
+select year(getdate());             -- Ergebnis numersich
+select month(getdate());            -- Ergebnis numersich
+select day(getdate());              -- Ergebnis numersich
+
+select lnr, ldatum, day(ldatum), month(ldatum), year(ldatum)
+from lieferung;
+
+select date();
+
+-- bestimmen welcher Wochentag der Wochenbeginn ist
+
+-- fuer Deutschland
+
+select @@datefirst;                 -- 1 --> Montag
+
+-- fuer USA
+
+set language us_englisch;
+select @@datefirst;                 -- 7 --> Sonntag
+
+-- Russia
+set language russian;
+select @@datefirst;                 -- 1 --> Montag
+
+-- Datumsfuntionen zum Berechnen von Datumswerten
+
+select datename(dw,getdate());      -- Mittwoch --> alfanumerisch
+select datename(mm,getdate());      -- Juni     --> alfanumerisch
+select datename(yyyy,getdate());    -- 2022     --> alfanumerisch
+
+select datepart(dd,getdate());      -- 1        --> numerisch
+select datepart(mm,getdate());      -- 6        --> numerisch
+select datepart(yyyy,getdate());    -- 2022     --> numerisch
+
+-- Alle im August 1990 durchgefuehrten Lieferungen
+
+select * from lieferung
+where datepart(mm,ldatum) = 8
+and datepart (yyyy,ldatum) = 1990;
+
+-- Zahlungstermin 37 Tage nach  Lieferdatum
+
+select lnr, anr, ldatum, dateadd(dd, 37, ldatum) as [Zahlung]
+from lieferung;
+
+-- Anzahl der Monate seit Lieferung bis Heute
+
+select lnr, anr, ldatum, datediff(mm,ldatum,getdate()) as [Anzahl Monate]
+from lieferung;
+
+-- Datum Konvertieren
+
+-- nicht mit cast() konvertieren, da sonst unerwartete Ergebnisse
+-- auftreten
+
+-- Lieferungen in einem deutschen Format (dd.mm.yyyy) darstellen.
+
+select lnr, anr, cast(ldatum as char(10)) from Lieferung
+
+-- besser ist die Funktion convert
+
+select lnr, anr, convert(char(10),ldatum,104) from Lieferung;
+
+-	Uebung 3
+
+1.
+
+-- Schreiben sie eine Abfrage auf Tabelle Lieferung 
+-- in der Datenbank Standard, welche ihnen nachstehendes 
+-- Ergebnis liefert
+
+select anr as [Artikelnummer], lmenge as [Liefermenge], 
+datename(dw,ldatum)+' der '+
+datename(dd,ldatum)+'. '+
+datename(mm,ldatum)+' '+
+datename(yyyy,ldatum) as [Lieferdatum]
+from lieferung;
+
+2.
+
+-- Schreiben sie eine Abfrage auf Tabelle Lieferung 
+-- in der Datenbank Standard, welche ihnen nachstehendes  
+-- Ergebnis liefert
+
+select anr as 'Artikelnummer', convert(char(10),ldatum,104) as 'Lieferdatum',
+'vor ' + cast(datediff(dd, convert(datetime,ldatum,104), getdate())/365 as varchar(10)) +
+' Jahren und ' +
+cast(cast(datediff(dd, ldatum, getdate()) % 365.25/30.4375 as int) as varchar(2))
++ ' Monaten.' as 'Die Lieferung ...'
+from lieferung;
+
+Tag 3:
+
+use standard
+go 
+
+-- Gruppieren und Zusammenfassen von Dateien
+
+-- Aggregatfunktionen
+
+-- sie beziehen sich auf die Daten einer Spalte der Tabelle (ausser count)
+-- und geben einen Zusammenfassungswert zurueck
+
+-- das Ergebnis ist genau ein Wert
+
+-- all Aggregatfunktionen ignorieren NULL-Marken
+
+-- die fuenf am haufigsten gebrauchten Aggregatfunktionen sind
+
+--      avg     (average) Durchschnitt der nummerischen Spaltenwerte
+--      max     der groesste Spaltenwert
+--      min     der kleinste Spaltenwert
+--      sum     die Summe der nummerischen Spaltenwerte 
+--      count   die Anzahl der Spaltenwerte
+
+select  sum(lmenge) as [Liefermenge gesamt],
+        max(lmenge) as [groesste Liefermenge],
+        min(lmenge) as [kleinste Liefermenge],
+        avg(lmenge) as [durchschnittliche Liefermenge],
+        count(lnr) as [Anzahl der Lieferungen]
+from lieferung;
+
+-- Die groesste Liefermenge
+
+select max(lmenge) from lieferung;
+
+-- Neugierig: ich will wissen wer das ist!
+
+select max(lmenge),lnr from lieferung;   -- Fehler
+
+-- Alle Spalten ein der Select-Liste die kein Argument einer Aggregatfunktion
+-- sind muessen in einer group by Klausel stehen
+
+select max(lmenge),lnr from lieferung
+group by lnr;
+
+-- das veraendert die Fragestellung
+-- die groesste Lieferung eines jeden Lieferanten
+
+-- Agregatfunktion COUNT
+
+insert into Lieferant values('L10','Meier',null,'Erfurt')
+
+-- Anzahl der Lieferanten
+
+select count(lnr) from lieferant;       -- immer richtig, weil die Primaer-Spalte 
+                                        -- als Argument verwendet wird
+
+select count(*) from lieferant;         -- immer richtig, weil es in einer Tabelle
+                                        -- keine leeren Datensaetze gibt
+                                        -- count(*) zaehlt die DS (Datensaetze) der
+                                        -- angebenen Tabelle
+
+select count(status) from lieferant;    -- nicht immer richtig,weil die Spalte 
+                                        -- Unbekannte WErte enthalten kann.
+
+-- alle Aggregatfunktionen ignorieren NULL-Marken
+
+select count(lnr) from lieferant;       -- 6 DS
+select count(status) from lieferant;    -- 5 DS
+
+---------------------------------------------------------------
+select *
+from lieferant
+
+-- Das groesste Gesamtlagergewicht aller Artikel in Kilo
+
+select gewicht * 0.001 * amenge as [Gesamtlagergewicht]
+from artikel;
+
+select max(gewicht * 0.001 * amenge)
+from artikel;
+
+-- die letzte Lieferung von 'A02'
+
+select max(ldatum) from lieferung where anr = 'A02'
+
+-- Anzahl der Lieferanten die geliefert haben
+
+select count(lnr) from lieferung;          -- FALSCH -- liefert die Anzahl 
+                                                     -- der Lieferungen
+
+select count(distinct lnr) from lieferung; -- RICHTIG
+
+-- Gesucht ist die groesste Status der Lieferanten am jeweiligen
+-- Wohnort ...
+
+select lstadt, max(status)
+from lieferant
+group by lstadt;
+
+-- ... wenn der duschschnittliche Statuswert am jeweiligen Wohnort nicht kleiner
+-- als 15 ist
+
+select lstadt, max(status)
+from lieferant
+where avg(status) > 15
+group by lstadt;                -- FALSCH
+
+-- in einer Where-KLausel darf niemals eine Aggregatfunktion stehen.
+-- Die Bedingung ist eine Bedingung fuer die Gruppe!
+
+select lstadt, max(status)
+from lieferant
+group by lstadt
+having avg(status) > 15;
+
+-- ohne die Aachner Lieferanten
+
+select lstadt, max(status)
+from lieferant
+group by lstadt
+having avg(status) > 15 and lstadt <> 'Aachen';     -- Unanstaendig
+
+select lstadt, max(status)
+from lieferant
+where lstadt <> 'Aachen'
+group by lstadt
+having avg(status) > 15;                            -- RICHTIG
+
+
+--Uebung:
+1.
+
+select count(lnr) as [Anzahl der Lieferungen]
+from lieferung
+where datepart(mm,ldatum) = 8
+
+-- pruefen mit
+select *
+from lieferung
+
+2.
+
+select count(lstadt) from lieferant;
+
+3.
+
+select lnr, min(lmenge) 
+as [kleinste Liefermenge] 
+from lieferung
+group by lnr                    
+
+4.
+
+select * from lieferant
+where lname like '[s]%'
+order by lname asc
+
+-- oder
+
+select min(lname)
+from lieferant
+where lname like 's%';
+
+5.
+
+select astadt, max(amenge)
+from artikel
+group by astadt;
+
+-- pruefen mit
+select * from artikel
+
+6.
+
+select lnr, 
+count (distinct anr)
+from Lieferung
+group by lnr;
+
+7.
+
+select anr
+from lieferung
+group by anr
+having count (anr) < 3
+
+8.
+
+select lnr, sum (lmenge)
+from lieferung
+where ldatum >= '13.07.1990'
+group by lnr
+having sum (lmenge) > 600
+
+9.
+
+select min(status), max(status), lstadt
+from lieferant
+where lnr between 'L01' and 'L99'
+group by lstadt
+having min(status) > 10 and max(status) <= 50;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tag 4
+
+insert into lieferung values('L04', 'A03', 500, '10.06.2021');
+insert into lieferung values('L04', 'A02', 500, '20.06.2021');
+insert into lieferung values('L04', 'A01', 500, '01.06.2022');
+insert into lieferung values('L04', 'A03', 500, CONVERT(char(10),GETDATE(),104));
+
+select *
+from lieferung
+
+-- CUBE und ROLLUP
+-- ermoeglichen zusammen mit Aggregatfunktionen erweiterte      Zusammenfassungswerte
+-- die Funktionen werden in der group by-Klausel verwendet
+
+-- die Lieferantennummer, der Monat der Lieferung , das Jahr der Lieferung und
+-- die Gesamtliefermenge aller Lieferanten mit einer Liefermenge
+-- von mind. 100 Stueck
+
+select lnr, datename(mm,ldatum) as [Monat], datepart(yyyy,ldatum) as [Jahr],
+sum(lmenge) as [Gesamtliefermenge]
+from lieferung
+where lmenge >= 100
+group by lnr, datename(mm,ldatum), datepart(yyyy,ldatum);
+
+-- Da wir ein sehr grosses Gruppenbildungsmerkmal verwenden muessen
+-- Ergebniss wenig aussagekraeftig
+--          eine Gesamtliefermenge ueber alle Lieferungen
+--          eine Gesamtliefermenge furr jeden Lieferanten
+--          eine Gesamtliefermenge fuer jeden Lieferanten im jeweiligen Monat
+--          eine Gesamtliefermenge fuer jeden Lieferanten im jeweiligen Monat und Jahr
+
+select lnr, datename(mm,ldatum) as [Monat], datepart(yyyy,ldatum) as [Jahr],
+sum(lmenge) as [Gesamtliefermenge]
+from lieferung
+where lmenge >= 100
+group by rollup (lnr, datename(mm,ldatum), datepart(yyyy,ldatum))
+order by 1,2,3;
+
+-	uebertreiben -- weiter Zwischenaggragate
+
+select lnr, datename(mm,ldatum) as [Monat], datepart(yyyy,ldatum) as [Jahr],
+sum(lmenge) as [Gesamtliefermenge]
+from lieferung
+where lmenge >= 100
+group by cube (lnr, datename(mm,ldatum), datepart(yyyy,ldatum))
+order by 1,2,3;
+
+-- loeschen
+
+delete lieferung where lmenge = 500
+
+-- pruefen
+
+select * from lieferung
+
+-- Rangfolgefuntionen
+--      RANK    
+--      DENSE-RANK
+--      ROW_NUMBER
+
+-- RANK 
+
+-- Rangelolge der Lieferanten anhand ihrer Gesamtlieferungen
+
+select lnr, rank() over(order by sum(lmenge) desc) as [Rang], sum(lmenge)
+        as [Gesamtliefermenge]
+from lieferung
+group by lnr;
+
+insert into lieferung values('L02','A04',200,'03.06.2022');
+
+-- bei gleicher Rangfolge ensteht in der Spalte Rang eine Luecke.
+
+-- DENSE_RANK
+
+select lnr, dense_rank() over(order by sum(lmenge) desc) as [Rang], sum(lmenge)
+        as [Gesamtliefermenge]
+from lieferung
+group by lnr;
+
+-- Zeilennummern mit ROW_NUMBER
+
+-- Alle Angaben zu den Liefranten zuzueglich einer laufenden Nummer
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+from lieferant;
+
+-- das Ergebnis einer Abfage in eine Datenbanktabelle speichern
+-- er kann gespeichert werden in eine neue permanenten Tabelle
+-- oder in tempoeaeren Tabellen
+-- temporaere Tabellen koennen lokal oder gobal sein
+-- temporaere Tabellen koennen von jedem Datenbanbenutzer erstellt werden
+-- sie existieren solange wie die Sitzung die sie erstellt hat existiert
+
+-- permanente Tabellen koennen nur von Benutzern mit der Berechtigung
+-- create table.. und der alter schema.. Bereschtigung fuer das Schema
+-- wo die Tabelle erstellt wird, erstellt werden.
+
+-- 1. permanente Tabelle
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+into lief_m_nr
+from lieferant;
+
+-- pruefen
+
+select * from lief_m_nr;
+
+-- 2. lokal temp. Tabelle
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+into #lief_m_nr
+from lieferant;
+
+-- pruefen
+
+select * from #lief_m_nr;
+
+-- 3. globale temp. Tabelle
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+into ##lief_m_nr
+from lieferant;
+
+select * from ##lief_m_nr;
+
+-- am temporaersten sind Tabellenvariable
+
+-- diese existieren fuer die Zeitdauer eines Stapels
+
+declare @tab table([Laufende Nummer] int,
+                  Lieferantennummer char(3),
+                  Namen varchar(100),
+                  Ort varchar(100));
+
+insert into @tab select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+        from lieferant;
+
+select * from @tab;
+go
+
+----------------------------------------------------------------------------------
+
+use standard;
+go
+
+-- Mengenoperatoren aus der Mengenmathematik
+
+-- Adition
+-- Minus
+-- Schnittmenge
+
+-- Union M1 + M2 = M2/M2
+
+--Alle Orte die Wohnorte und Lagerorte sind
+
+select lstadt from lieferant
+union
+select astadt from artikel;
+
+-- beide Abfragen links und rechts vom Operator muessen die gleiche Anzahl
+-- von Spalten haben und  die Spalten muessen zueinander kompatibel sein.
+-- das nennt man Union-Kompatibilitaet
+
+-- das formatieren des Ergbnis
+
+select lstadt as [Wohn-und Lagerorte] from lieferant
+union
+select astadt from artikel
+order by lstadt desc;
+
+-- Union eleminiert doppelte Datensaetze im Ergbnis (wie distinct)
+-- das kann ich ausschalten
+
+select lstadt as [Wohn-und Lagerorte] from lieferant
+union all
+select astadt from artikel
+order by lstadt desc;
+
+-- EXCEPT
+-- entspricht einer Subtraktion -- gibt saemtliche Datensaetze der
+-- Abfrage links vom Operator zurueck, die nicht in der Abfrage rechts
+-- vom Operator vorkommen
+
+-- Wohnort von Lieferanten wo keine Artikel gelagert sind
+
+select lstadt as [Wohn-und Lagerorte] from lieferant
+except
+select astadt from artikel;
+
+-- INTERSEC
+-- gibt saemtliche Datensaetze zurueck die sowohl in der Abfrage rechts vom Operator
+-- als auch in der Abfrage links vom Operator vorkommen
+
+-- Ortsnamen wo Lieferanten wohnen und auch Artikel gelagert werden
+
+select lstadt as [Orte] from lieferant
+intersect
+select astadt from artikel;
+
+-- Gesucht sind Nummer, Namen und Wohnorte der Lieferanten
+-- die dort wohnen wo Artikel A04 lagert.
+
+select lnr, lname, lstadt
+from lieferant
+where lstadt = (select astadt from artikel where anr = 'A04');
+
+-- Gesucht sind die Nummmern und Namen der Artikel die bereits geliefert wurden.
+
+select anr from lieferung
+
+select anr, aname
+from artikel
+where anr in(select anr from lieferung);
+
+/*
+Welche Hamburger Lieferanten haben nach dem 01.08.90 rote und blaue
+Artikel geliefert?
+*/
+
+select farbe from artikel
+
+select lname from lieferant
+
+select ldatum from lieferung
+
+select anr from artikel where farbe in('rot','blau')
+
+select *
+from lieferant
+where lstadt = 'Hamburg'
+and lnr in (select lnr
+        from lieferung
+        where ldatum > '01.08.90'
+        and anr in(select anr from artikel where farbe in('rot','blau')))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tag 5:
+
+--Uebungen
+
+/*
+Alle Angaben zu den Liefranten deren Statuswert �ber dem durchschnittlichen
+Statuswert der Lieferanten liegt, die in der gleichen Stadt wohnen
+wie Liefrant L02.
+*/
+
+select lstadt
+from lieferant
+where lnr = 'L02'
+
+select avg(status) 
+from lieferant
+
+select * from lieferant
+where status > (select avg(status) from lieferant
+            where lstadt = (select lstadt from lieferant where lnr = 'L02'))
+
+/*
+Nummern und Namen der Artikel die im August 1990 von Lieferanten geliefert wurden 
+die mindestens 3x geliefert werden.
+*/
+
+-- 1. Frage: welche Lieferanten haben mind. 3 x geliefert?
+
+select lnr from lieferung group by lnr having count(lnr) >= 3
+
+-- 2. Frage: haben diese Lieferanten im August 1990 geliefert
+
+select anr 
+from lieferung
+        where datepart (mm,ldatum) = 8
+        and datepart (yyyy,ldatum) = 1990
+        and lnr in (select lnr from lieferung group by lnr having count(lnr) >= 3)
+
+-- 3. Wenn ja was?
+
+(select anr 
+        from lieferung
+        where datepart (mm,ldatum) = 8
+        and datepart (yyyy,ldatum) = 1990
+        and lnr in (select lnr from lieferung group by lnr having count(lnr) >= 3))
+
+-- 4. Frage Welche Nummer und welchen Namen haben die Artikel
+
+select anr, aname
+from artikel 
+        where anr in(select anr 
+            from lieferung
+            where datepart (mm,ldatum) = 8
+            and datepart (yyyy,ldatum) = 1990
+            and lnr in (select lnr from lieferung group by lnr having count(lnr) >= 3))
+
+/*
+Gesucht ist das Lieferdatum der Lieferungen wo Hamburger Lieferanten
+rote und blaue Artikel geliefert haben.
+*/
+
+select ldatum
+from lieferung
+where lnr in (select lnr
+             from lieferant
+             where lstadt = 'Hamburg'
+             and anr in (select anr from artikel where farbe in('rot','blau')))
+
+-- oder 
+
+select convert(char(10),ldatum,104) as [Lieferdatum]
+from lieferung
+where lnr in (select lnr
+             from lieferant
+             where lstadt = 'Hamburg')
+             and anr in (select anr from artikel where farbe in('rot','blau'))
+
+insert into lieferung values('L04','A04',500,'09.08.90');
+insert into lieferung values('L04','A03',500,'09.08.90');
+
+/*
+Gesucht sind die Namen und Nummern der Artikel deren letzte Lieferung
+an dem Tag war als auch Artikel A02 zuletzt geliefert wurde.
+*/
+
+select anr, aname 
+from artikel
+where anr in(select anr from lieferung
+             group by anr
+             having max(ldatum) = (select max(ldatum)
+                                  from lieferung
+                                  where anr = 'A02'));
+
+/*
+Nummern und Namen der Lieferanten die jeden Artikel geliefert haben.
+*/
+
+select lnr, lname
+from lieferant 
+where lnr in(select lnr from lieferung)
+            
+    
+
+select lnr, lname
+from lieferant 
+where lnr in(select lnr 
+             from lieferung
+             group by lnr
+             having count(distinct anr) = (select count(anr)
+             from artikel));
+
+-- delete artikel where anr > 'A06' 
+
+/* Nummern und Namen von Artikel die mindestens zweimal geliefert wurden, 
+von Lieferanten die ebenfalls mehr als zweimal geliefert haben.
+*/
+
+
+select anr, aname
+    from artikel
+    where anr in(select anr
+                from lieferung
+                group by anr
+                having count(anr) >=2)
+
+--oder
+
+select anr, aname
+    from artikel
+    where anr in (select anr
+                 from lieferung
+                 where lnr in(select lnr from lieferung group by lnr having count(lnr) > 2)
+                 group by anr
+                 having count(anr) >=2)
+
+
+
+
+
+
+
+
+--Unterabfragen in der SELECT -Liste
+
+select anr, aname, gewicht,
+        gewicht -(select avg(gewicht) from artikel) as [Abweichung vom Durchschnitt]
+from Artikel;
+
+-- korrelierte Unterabfragen
+
+-- langsamste Art von Unterabfragen
+-- fast jede korrelierte Unterabfrage kann in eine einfache Unterabfrage
+-- oder in einen Join umgewandelt werden.
+
+-- im Gegensatz zu einfachen Unterabfragen beginnt eine korrelierte
+-- Unterabfrage mit der ausseren Abfrage
+
+-- Lieferanenten die mindestens dreimal geliefert haben
+
+select *
+from lieferant as a
+where 3 <= (select count(lnr)
+            from lieferung as b
+            where a.lnr = b.lnr);
+-- oder
+
+select *
+from lieferant
+where 3 <= (select count(lnr)
+            from lieferung
+            where lieferant.lnr = lieferung.lnr);
+
+-- delete lieferung where datepart(yyyy,ldatum) > 1990;
+
+-- Alle Angaben zu Lieferantendie geliefert haben
+
+select *
+from lieferant as a
+where exists (select *
+            from lieferung as b
+            where a.lnr = b.lnr);
+
+-- oder
+
+select *
+from lieferant
+where exists (select *
+              from lieferung
+              where lieferant.lnr = lieferung.lnr);
+TAG 6:
+
+use standard
+go 
+
+-- loeschen
+-- delete lieferant where lnr > 'L05';
+-- delete lieferung where lmenge = 500 or datepart(yyyy,ldatum) > 1990;
+
+select * 
+from lieferant cross join lieferung;
+
+-- kartesisches Produkt wir immer groesser je mehr cross joins ausgefuehrt werden
+
+select * 
+from lieferant cross join lieferung cross join artikel 
+cross join lieferant as a 
+cross join lieferung as b 
+cross join artikel as c
+
+-- INNER JOINS
+
+-- liefert alle Datensaetze der am Join beteiligten Tabellen die die
+-- Verknuepfungsbedingungen erfuellen
+
+-- Lieferanten mit ihren Lieferungen
+
+select *
+from lieferant join lieferung on lieferant.lnr = lieferung.lnr;
+
+-- oder 
+
+select *
+from lieferant as a join lieferung as b on a.lnr = b.lnr;
+
+-- im  dargstellten Ergebnis besteht eine Redundanz an Tabellenspalten (lnr)
+-- wenn die entfernt wird sprechen wir ueber einen NATURAL Join
+
+select a.lnr, lname, status, lstadt, anr, lmenge, ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr;
+
+-- die Lieferungen Hamburger Lieferanten im August 1990
+
+select a.lnr, lname, status, lstadt, anr, lmenge, ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+where lstadt = 'Hamburg'
+and datepart(mm,ldatum) = 8 
+and datepart(yyyy,ldatum) = 1990;
+
+-- Nummern und Namen der Lieferanten die geliefert haben
+
+select a.lnr, lname
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+
+-- Im Ergebnis erscheinen 12 Datensaetze. Einige sind identisch.
+
+select *
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+
+-- aus der logischen Menge des Joins zwischen Lieferant und Lieferung
+-- lasse ich mir die Spalten lnr und lname anzeigen
+
+-- wie entferne ich die doppelten DS -- mit DISTINCT
+
+select distinct a.lnr, lname
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+
+-- wenn bei einem Join nur die Spalten einer der am Join beteiligten
+-- Tabellen angezeigt werden, dann benoetige ich DISTINCT
+
+-- Nummern, Namen und Lieferdatum der roten und blauen Artikel
+-- die von Lieferanten aus Ludwigshafen geliefert wurden
+
+select a.anr, aname, ldatum
+from artikel as a join lieferung as b on a.anr = b.anr
+    join lieferant as c on b.lnr = c.lnr
+where farbe in ('rot','blau')
+and lstadt = 'Ludwigshafen';
+
+-- Joins eignen sich hervorragend fuer Unterabfragen in der
+-- FROM -Klausel
+
+-- Nummern, Namen und Anzahl ihrer Lieferungen fuer alle Lieferanten
+-- die  mindestens 2x geliefert haben
+
+select a.lnr, lname, anz as [Anzahl Lieferung]
+from lieferant as a join (select lnr, count(*) as [anz]
+                          from lieferung
+                          group by lnr) as b on a.lnr = b.lnr
+where anz >= 2;
+
+-- 1. korrelierende Unterabfrage 
+
+select lnr, lname
+from lieferant
+where exists (select *
+               from lieferung
+               where lieferant.lnr = lieferung.lnr);    --langsam
+
+-- 2. einfache Unterabfrage 
+
+select lnr, lname
+from lieferant
+where lnr in (select lnr from lieferung);               --schneller
+
+-- 3. Join Abfrage 
+
+select distinct a.lnr, lname
+from lieferant as a join 
+lieferung as b on a.lnr = b.lnr;                        --am schnellsten
+
+--------------------------------------------------------
+
+-- hinter jedem Join steht ein kartesisches Produkt
+-- darum ist folgende Anweisung falsch!
+
+-- die Nummern und Namen der Lieferanten die noch nie geliefert haben
+
+select distinct a.lnr, lname
+from lieferant as a join 
+lieferung as b on a.lnr <> b.lnr;           -- falsches Ergebnis
+
+-- bei naeherer Betrachtung enthaelt das ERgebnis 48 DS, 60 DS des
+-- kartesischen Produktes minus 12 DS die logisch zusammen gehoeren
+
+select * 
+from lieferant as a join lieferung as b
+    on a.lnr <> b.lnr
+
+-- die oben genannte Fragestellung kann man trotzdem mit
+-- einem JOIN beantworten
+
+-- es wird ein OUTER Join benoetigt- --> die Fragestellung wird etwas spaeter
+-- wieder aufgenommen
+
+-- aufnehmen eines Testdatensatz --> eine Lieferung fuer die es keinen
+-- Lieferanten gibt
+-- das laesst das Datenbanksystem micht zu --> referentielle Integritaet
+-- darum muessen wir tricksen
+
+alter table lieferung drop constraint lnr_fs;
+go 
+
+insert into lieferung values('L33','A05',500,getdate());
+go 
+
+alter table lieferung with nocheck
+add constraint lnr_fs foreign key(lnr) references lieferant(lnr);
+go
+
+---------------------------------------------------------------------
+
+-- linker OUTER Join
+
+-- gesucht sind alle Lieferanten mit ihren Lieferungen und auch die
+-- Lieferanten die noch nicht geliefert haben
+
+select *
+from lieferant as a left join lieferung as b on a.lnr = b.lnr
+
+-- rechter OUTER Join
+
+-- gesucht sind alle Lieferanten mit ihren Lieferungen und die
+-- Lieferungen denen kein Lieferant zugeordnet werden kann
+
+select *
+from lieferant as a right join lieferung as b on a.lnr = b.lnr
+
+-- voller OUTER Join
+
+-- gesucht sind alle Lieferanten mit ihren Lieferungen, weiterhin 
+-- die Lieferanten die noch nicht geliefert haben und die
+-- Lieferungen denen kein Lieferant zugeordnet werden kann
+
+select *
+from lieferant as a full join lieferung as b on a.lnr = b.lnr
+
+-- also zurueck zur Frage: Nummern und Namen der Lieferanten 
+-- die noch nicht  geliefert haben
+
+select a.lnr,lname
+from lieferant as a left join lieferung as b on a.lnr = b.lnr
+where b.lnr is null;
+
+ 
+
+
+
+
+
+
+
+
+
+ 1. 
+
+ -- die Daten aller Lieferanten aus Ludwigshafen?
+
+ select *
+ from Lieferant 
+ where lstadt = 'Ludwigshafen'
+
+ 2.
+
+ -- die Nummern, Namen und Lagerorte aller gelieferter Artikel
+
+ select distinct a.anr, aname, astadt
+ from artikel a, lieferung b
+ where a.anr = b.anr;
+
+ 3.
+
+ -- die Nummern und Namen aller Artikel und ihr Gewicht in kg
+
+ select anr, aname, gewicht * 0.001 as [kg]
+ from artikel;
+
+ 4. 
+
+ -- die Namen aller Lieferanten aus Aachen mit einem Statuswert 
+ -- zwischen 20 und 30
+
+ select lname 
+ from lieferant
+ where lstadt = 'Aachen' and status between '20' and '30'
+
+ 5.
+
+ -- die Nummern und Namen aller Artikel, deren Gewicht 
+ -- 12, 14 oder 17 Gramm betraegt
+
+ select anr, aname
+ from artikel
+ where gewicht in ('12','14','17');
+
+ 
+
+
+
+
+
+
+
+6.
+
+ -- die Daten aller Lieferungen von Lieferanten aus Hamburg 
+
+ select *
+ from lieferung
+ where lnr in (select lnr
+              from lieferant
+              where lstadt = 'Hamburg')
+
+ 7. 
+
+-- Artikelnummern, Artikelname und Lieferantennummern und Lieferantennamen 
+-- mit uebereinstimmenden Lagerort und Wohnort
+
+ select anr,aname,lnr,lname 
+ from artikel join lieferant on astadt = lstadt;
+
+ 8.
+
+ -- Artikelnummer, Artikelname und Lagerort aller gelieferten Artikel 
+ -- und Lieferantennummer Lieferantenname 
+ -- und Wohnort des jeweiligen Lieferanten,
+ -- sofern Lagerort und Wohnort uebereinstimmen
+
+ select anr, aname, astadt, lnr, lname, lstadt
+ from artikel, lieferant
+ where astadt = lstadt
+ and anr + lnr in (select anr +lnr
+                   from lieferung)
+
+ 9.
+
+ -- Paare von Artikelnummern, von Artikeln mit gleichem Lagerort 
+ -- (Jedes Paar soll nur einmal ausgegeben werden)
+
+ select a.anr, b.anr
+ from artikel a, artikel b
+ where a.astadt = b.astadt
+ and a.anr < b.anr;
+
+ 
+
+
+
+
+
+
+
+
+10.
+ 
+ -- Nummern aller Lieferanten, die mindestens einen Artikel geliefert
+ -- haben den auch Lieferant 'L03' geliefert hat
+
+  select lnr 
+  from lieferung
+  where anr in (select anr 
+                from lieferung
+                where lnr = 'L03')
+  and lnr <> 'L03';
+
+ 11.
+
+ -- Nummern aller Lieferanten, die mehr als einen Artikel geliefert haben
+
+   select lnr 
+   from lieferung
+   group by lnr
+   having count(distinct anr) > 1;
+ 
+ 12.
+
+ -- Nummern und Namen der Artikel, die am selben Ort wie Artikel A03
+ -- gelagert werden
+
+   select anr, aname
+   from artikel
+   where anr = 'A03'
+
+   -- besser
+
+   select anr, aname
+   from artikel
+   where astadt = (select astadt
+                   from artikel
+                   where anr = 'A03')
+   and anr <> 'A03'
+
+ 13.
+
+ -- durchschnittliche Liefermenge des Artikels A01
+
+   select avg(lmenge)
+   from lieferung
+   where anr = 'A01' 
+
+ 
+
+
+14.
+
+ -- Gesamtliefermenge aller Lieferungen des Artikels A01 durch den Lieferanten
+ -- L02
+
+   select sum(lmenge)
+   from lieferung
+   where anr = 'A01' and lnr = 'L02'
+  
+ 15.
+
+ -- Lagerorte der Artikel, die von Lieferant L02 geliefert wurden
+
+   select astadt 
+   from artikel a, lieferung b
+   where a.anr = b.anr
+   and lnr = 'L02';
+
+ 16. 
+
+ -- Nummern und Namen der Lieferanten, deren Statuswert kleiner als 
+ -- der von Lieferant L03 ist
+
+   select lnr, lname
+   from lieferant
+   where status  < (select status 
+                    from lieferant 
+                    where lnr = 'L03')
+
+ 17.
+ 
+ -- Nummern von Lieferanten, welche die gleichen Artikel wie 
+ -- Lieferant L02 geliefert haben
+ 
+   select distinct lnr 
+   from lieferung a
+   where lnr <> 'L02'
+   and not exists    (select * 
+                      from lieferung b
+                      where lnr = 'L02'
+                      and not exists   (select * 
+                                        from lieferung c
+                                        where c.lnr = a.lnr
+                                        and c.anr = b.anr));
+                                    
+
+
+
+
+
+ 18.
+
+ -- die Namen aller Orte die Lager Ort von Artikeln oder Wohnort 
+ -- von Lieferanten sind
+
+    select astadt as [Lagerort bzw. Wohnort]
+    from artikel
+    union
+    select lstadt 
+    from lieferant;       
+
+ 19.
+
+ -- Nummern und Namen aller Lieferanten, die nicht den Artikel A05 
+ -- geliefert haben
+
+    select lnr, lname 
+    from lieferant 
+    where lnr not in (select lnr
+                      from lieferung
+                      where anr = 'A05');
+                                      
+
+
+
+ 20.
+
+ -- Lieferantennummern und Namen der Lieferanten, die alle Artikel 
+ -- geliefert haben
+
+    select lnr, lname
+    from lieferant
+    where lnr in  (select lnr
+                   from lieferung
+                   group by lnr
+                   having count(distinct anr) = (select count(*) from artikel));
+
+ 21.
+
+ -- Nummern, Namen und Wohnort der Lieferanten, die bereits geliefert 
+ -- haben und deren Statuswert groesser als
+ -- der kleinste Statuswert aller Lieferanten ist
+
+    select distinct a.lnr, lname, lstadt
+    from lieferant a, lieferung b
+    where a.lnr = b.lnr
+    and status > (select min (status) from lieferant);
+
+
+ 22.
+
+ -- Nummern und Bezeichnung aller Artikel, deren durchschnittliche Liefermenge 
+ -- kleiner als die des Artikels A03 ist
+
+    select a.anr, aname
+    from artikel a, lieferung b
+    where a.anr = b.anr
+    group by a.anr, aname
+    having avg (lmenge) < (select avg (lmenge)
+                            from lieferung
+                            where anr = 'A03');
+
+ 23.
+
+ -- Lieferantennummern, Lieferantenname, Artikelnummer und 
+ -- Artikelbezeichnung aller Lieferungen, die seit dem 05.05.1990
+ -- von Hamburger Lieferaanten durchgefuehrt
+ -- wurden
+
+    select a.lnr, lname, b.anr, aname
+    from lieferant a join lieferung b on a.lnr = b.lnr join artikel 
+    c on b.anr = c.anr
+    where lstadt = 'Hamburg'
+    and ldatum >= '05.05.1990';
+
+ 
+
+
+24. 
+ 
+ -- Anzahl der Lieferungen, die seit dem 05.05.1990 von Hamburger Lieferanten
+ -- durchgefuehrt wurden
+
+    select count(*)
+    from lieferant a, lieferung b
+    where a.lnr = b.lnr
+    and lstadt = 'Hamburg'
+    and ldatum >= '05.05.1990';
+
+ 25.
+
+ -- Ortsnamen, die Wohnort aber nicht Lagerort sind
+
+    select distint lstadt
+    from lieferant
+    where lstadt not in     (select astadt
+                             from artikel);
+
+ 
+26.
+
+ -- Ortsnamen, die sowohl Wohnort als auch Lagerort sind
+
+    select distint lstadt
+    from lieferant, artikel
+    where lstadt = astadt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tag 7:
+
+  --pruefen mit
+
+ select * from lieferant
+
+ -- Daten bearbeiten
+
+ -- Insert
+
+ -- Einen Datensatz in eine Tabelle einfuegen
+
+ -- 1. in der Reihenfoolge der Tabellendefinition
+
+ insert into lieferant values('L20','Krause',5,'Erfurt');
+
+ -- 2. geaenderte Reihenfolge
+
+ insert into lieferant(lstadt,lnr,status,lname) values('Weimar','L21',5,'Schulze');
+
+ insert into lieferant values('Erfurt','L22','Krause',5,) -- Fehler
+
+ -- 3. unbekannte Werte
+
+ insert into lieferant values('L22','Maria',5,null);
+
+ insert into lieferant (lnr,lname) values('L23','Horst');
+
+ -- das geht nur wenn fuer alle Spalten die nicht ausgegeben werden, NULL
+ -- Marken zugelassen sind
+
+ -- BLOB laden (binary large objects)
+
+ create table medien 
+ (nr int not null,
+ bild varbinary(max) null,
+ typ varchar(5) null);
+
+ -- pruefen
+
+ select * from medien
+
+insert into medien values
+(1,(select * from openrowset(bulk 'c:\xml\colonel.jpg', single_blob) as c), '.jpg');
+
+-- weiter Moeglichkeiten zum Massenladen
+
+select *
+into lieferung_hist
+from lieferung;
+
+insert into lieferung_hist select * from lieferung;
+
+--pruefen mit
+
+select * from lieferung_hist
+
+-- Datenaenderung mitschneiden
+
+create table spion
+(lfdnr int,
+wann datetime,
+wer sysname,
+was varchar(20),
+primaerschluessel char(3),
+neuer_wert char(100),
+alter_wert char(100));
+
+insert into lieferant
+output 1,getdate(),suser_name(),'Insert', inserted.lnr, inserted.lnr, null
+       into spion
+values('L24','Boomer',5,'Weimar')
+
+--pruefen mit
+
+select * from spion
+
+-- Aendern der Daten
+
+-- Daten werden geaendert mit der UPDATE Anweisung
+-- es ein oder mehrere Spaltenwerte einer oder mehrerer Datensaetze
+-- geaendert werden
+
+-- eine Update - Anweisung ohne where Klausel macht keinen Sinn
+
+-- die Maria zieht nach Gotha
+
+update lieferant
+set lstadt = 'Gotha'
+where lnr = 'L22';
+
+-- der Status der Lieferanten die mehr als zwei mal geliefert haben 
+-- soll um 5 Punkte erhoeht werden
+
+update lieferant
+set status = status + 5
+where lnr in(select lnr
+             from lieferung
+             group by lnr
+             having count(lnr) > 2);
+
+-- mit Output arbeiten
+
+-- bei einer Update Anweisung werden 2 logische Tabellen gebildet
+-- inserted --> mit dem neuen geaenderten Wert
+-- deleted --> mit alten ungeaenderten Wert
+
+-- der Lieferant L23 zieht nach Urbich (weil Weltstadt)
+
+update lieferant
+set lstadt = 'Urbich'
+output 2, getdate(), suser_name(), 'Update', 
+        inserted.lnr, inserted.lstadt, deleted.lstadt
+into spion
+where lnr = 'L23';
+
+--pruefen mit
+
+select * from spion
+
+-- der Lieferant 23 zieht ploetzlich nach Dittelstedt
+
+update lieferant
+set lstadt = 'Dittelstedt'
+output 3, getdate(), suser_name(), 'Update', 
+        inserted.lnr, inserted.lstadt, deleted.lstadt
+into spion
+where lnr = 'L23';
+
+--DELETE
+
+-- loescht einen oder mehrere Datensaetze
+-- sollte nicht ohne where Klausel verwendet werden
+
+-- L23 verlaesst fluchtartig die Firma
+
+delete lieferant
+output 4, getdate(),suser_name(),'Delete',deleted.lnr,null,deleted.lnr
+into spion
+where lnr= 'L23'
+
+-- Alle Lieferanten ausser L05, die nicht geliefert haben sollen gloescht 
+-- werden
+
+delete lieferant
+where lnr not in (select lnr from lieferung)
+and lnr <> 'L05';
+
+-- Loeschen von Datensaetzen einer Tabelle ohne Protokolierung
+
+truncate table lieferung;
+
+
+
+
+select * from lieferant
+
+
+
+
+
+
