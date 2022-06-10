@@ -2701,14 +2701,14 @@ Tag 8:
 
 -- Installieren von SQL Server --
 
--- das Produkt ist in der Express, Standart, Developer und Evaluierungsedition
+-- das Produkt ist in der Express, Standard, Developer und Evaluierungsedition
 -- erhaeltlich
 
 -- die express Edition ist kostenfrei
 -- es gibt Einschränkungen in der Groesse
 -- der Datenbanbkdateien und es gibt
 -- keine Moeglichkeit der hohen Verfügbarkeit, der
--- Automatisierung un der Ueberwachung
+-- Automatisierung und der Ueberwachung
 
 -- die Evaluierungsversion entspricht der Enterprise Edition
 -- alle Funktionen sind verfügbar
@@ -2724,13 +2724,13 @@ Tag 8:
 -- SQL Server unterstuetzt RAID 1, RAID 5, RAID 10
 
 -- arbeiten mit dezitierten Platten --> Datendateien und
--- protokolldateien niemals auf ein Device
+-- Protokolldateien niemals auf ein Device
 
 -- die Dienstkonten sollten nicht die lokalen (vorinstallierten) sein
 -- auch wenn der SQL Server auf einem lokalen (ohne Domäne) Rechner installiert wird 
 -- sollten Konten erstellt werden mit einem sicheren Kennwort
 
--- installieren sie nur die Dienste die sie umbedingt benoetigen
+-- installieren sie nur die Dienste die sie unbedingt benoetigen
 
 -- wir wollen den SQL Server 2016 Enterprise Edition ohne grafische Oberflaeche installieren
 -- es ist jeweils ein Device fuer die Datenbankdateien und die Datenbankprotokolldateien
@@ -2739,13 +2739,13 @@ Tag 8:
 use master
 go
 
--- Datenbanken erstellen und verwalten
+-- Datenbanken erstellen und Verwalten
 
 -- Typen
 -- Systemdatenbanken (master, msdb, tempdb, model, distribution)
 
--- Transaktion ist eine unteilbaareEinheit die entweder ganz oder
--- ganz garnicht ausgeführt wird
+-- Transaktion ist eine unteilbare Einheit die entweder ganz oder
+-- ganz gar nicht ausgeführt wird
 
 -- Beispiel: der Herr Beinlich hat für den Herrn Donath
 --                              ein Programm geschrieben für das Homebanking
@@ -2787,10 +2787,3 @@ lmenge int not null,
 ldatum datetime not null
 );
 go
-
-
-
-
-
-
-
