@@ -1,4 +1,6 @@
-Tag 1:
+-----------------------------------------------------------------------------
+
+TAG 1:
 
 use standard;
 go
@@ -99,7 +101,7 @@ where lname between 'B' and 'Jz';
 
 -- Dafuer verwendet man like
 
----------------------------------------------------------------------------
+--
 
 -- Listen
 
@@ -119,7 +121,7 @@ where lstadt = 'Hamburg' or lstadt = 'Aachen';
 select * from lieferant
 where lstadt not in('Hamburg', 'Aachen');
 
------------------------------------------------------------
+--
 
 -- neuen Lieferanten aufnehmen.
 
@@ -180,7 +182,7 @@ where lname like '%%%';                 --- ???????????
 select * from lieferant
 where lname like '%y%%' escape 'y';
 
-----------------------------------------------------
+--
 
 -- Alle Lieferanten deren Wohnort nicht bekannt ist
 
@@ -199,8 +201,7 @@ select * from lieferant;
 select lnr, lname, isnull(status,50) as [status], lstadt
 from lieferant;
 
----------------------------------------------------------------------
-
+--
 -- Arbeit mit mehreren Bedingungen in der WHERE - Klausel
 
 select * from artikel
@@ -260,7 +261,9 @@ insert into artikel values('A11', 'Kurwa', 'rot', null, 'Riednordhausen', 100)
 
 insert into artikel values('A12', 'Lauch', 'blau', 0, 'Mittelried', 1200)
 
-Tag 2:
+--------------------------------------------------------------------------------
+
+TAG 2:
 
 use standard
 go
@@ -557,22 +560,9 @@ cast(cast(datediff(dd, ldatum, getdate()) % 365.25/30.4375 as int) as varchar(2)
 + ' Monaten.' as 'Die Lieferung ...'
 from lieferung;
 
+-------------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tag 2:
+TAG 3:
 
 use standard
 go 
@@ -643,7 +633,7 @@ select count(status) from lieferant;    -- nicht immer richtig,weil die Spalte
 select count(lnr) from lieferant;       -- 6 DS
 select count(status) from lieferant;    -- 5 DS
 
----------------------------------------------------------------
+--
 select *
 from lieferant
 
@@ -702,7 +692,84 @@ where lstadt <> 'Aachen'
 group by lstadt
 having avg(status) > 15;                            -- RICHTIG
 
-Tag 1:
+--Uebung:
+1.
+
+select count(lnr) as [Anzahl der Lieferungen]
+from lieferung
+where datepart(mm,ldatum) = 8
+
+-- pruefen mit
+select *
+from lieferung
+
+2.
+
+select count(lstadt) from lieferant;
+
+3.
+
+select lnr, min(lmenge) 
+as [kleinste Liefermenge] 
+from lieferung
+group by lnr                    
+
+4.
+
+select * from lieferant
+where lname like '[s]%'
+order by lname asc
+
+-- oder
+
+select min(lname)
+from lieferant
+where lname like 's%';
+
+5.
+
+select astadt, max(amenge)
+from artikel
+group by astadt;
+
+-- pruefen mit
+select * from artikel
+
+6.
+
+select lnr, 
+count (distinct anr)
+from Lieferung
+group by lnr;
+
+7.
+
+select anr
+from lieferung
+group by anr
+having count (anr) < 3
+
+8.
+
+select lnr, sum (lmenge)
+from lieferung
+where ldatum >= '13.07.1990'
+group by lnr
+having sum (lmenge) > 600
+
+9.
+
+select min(status), max(status), lstadt
+from lieferant
+where lnr between 'L01' and 'L99'
+group by lstadt
+having min(status) > 10 and max(status) <= 50;
+
+
+----------------------------------------------------------------------------------
+
+TAG 4:
+
 use standard;
 go
 
@@ -802,8 +869,7 @@ where lname between 'B' and 'Jz';
 
 -- Dafuer verwendet man like
 
----------------------------------------------------------------------------
-
+--
 -- Listen
 
 -- Alle Lieferanten die in Hamburg oder in Aachen wohnen
@@ -822,7 +888,7 @@ where lstadt = 'Hamburg' or lstadt = 'Aachen';
 select * from lieferant
 where lstadt not in('Hamburg', 'Aachen');
 
------------------------------------------------------------
+--
 
 -- neuen Lieferanten aufnehmen.
 
@@ -883,8 +949,7 @@ where lname like '%%%';                 --- ???????????
 select * from lieferant
 where lname like '%y%%' escape 'y';
 
-----------------------------------------------------
-
+--
 -- Alle Lieferanten deren Wohnort nicht bekannt ist
 
 select * from lieferant
@@ -902,7 +967,7 @@ select * from lieferant;
 select lnr, lname, isnull(status,50) as [status], lstadt
 from lieferant;
 
----------------------------------------------------------------------
+--
 
 -- Arbeit mit mehreren Bedingungen in der WHERE - Klausel
 
@@ -963,550 +1028,9 @@ insert into artikel values('A11', 'Kurwa', 'rot', null, 'Riednordhausen', 100)
 
 insert into artikel values('A12', 'Lauch', 'blau', 0, 'Mittelried', 1200)
 
+-----------------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tag 3:
-
-use standard
-go
-
-select anr, aname, gewicht, astadt, amenge
-from artikel
-where anr in('A01','A02','A03')
-
--- Ergebnisse formatieren
-
--- 1. Literale (erlaeuternder Text)
-
--- beschreibt den Inhalt einer Spalte
-
-select anr, aname, gewicht 'Gramm', astadt, amenge 'Stueck'
-from artikel
-where anr in('A01','A02','A03')
-
--	aendern der Spaltennamen
-
-select anr as [Artikelnummer], aname as [Artikelname], 
-gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
-astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
-from artikel
-where anr in('A01','A02','A03')
-
---oder
-
-select anr  [Artikelnummer], aname [Artikelname], 
-gewicht [Gewicht], 'Gramm' [Gewichtseinheit], 
-astadt [Lagerort], amenge [Lagermenge], 'Stueck' [Lagereinheit]
-from artikel
-where anr in('A01','A02','A03')
-
---oder
-
-select   [Artikelnummer] = anr, [Artikelname] = aname,  
-  [Gewicht] = gewicht,  [Gewichtseinheit] = 'Gramm', 
-  [Lagerort] = astadt, [Lagermenge] = amenge, [Lagereinheit] = 'Stueck'
-from artikel
-where anr in('A01','A02','A03')
-
--- Sortieren der Ergebnismenge
--- das Ergebnis soll nach dem Artikelnamen aufsteigend sortiert werden
--- und bei gleichen Artikelnamen nach dem Lagerort absteigend sortiert werden
-
-select anr as [Artikelnummer], aname as [Artikelname], 
-gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
-astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
-from artikel
-order by aname asc, astadt desc;
-
--- oder
-
-select anr as [Artikelnummer], aname as [Artikelname], 
-gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
-astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
-from artikel
-order by [Artikelnummer] asc, [Lagerort] desc;
-
--- oder
-
-select anr as [Artikelnummer], aname as [Artikelname], 
-gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
-astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
-from artikel
-order by 2 asc, 5 desc;
-
--- Entfernen doppelter Datensaetze aus dem Ergebnis
-
--- Schluesselwort DISTINCT entfernt doppelte DS aus dem Ergebnis
--- Distinct wird eingesetzt
---                  1. in der Select Liste
---                  2. in Argument einer Aggregatfunktion
-
--- Welche Lieferungen (lnr) haben geliefert?
-
-select lnr from lieferung       -- 12 DS mit redundanten Informationen
-
-select distinct lnr from lieferung;     --4DS
-
-select distinct lnr from lieferant;     -- Sinnlos, unverschaemt blamabel
-
--- CASE Ausdruecke
-
--- Einfaches CASE
--- es wird ein Ausdruck mit mehreren anderen Ausdruecken verglichen um das
--- Resultset zu finden
-
-select lnr, lname, lstadt, case lstadt
-                           when 'Hamburg' then 'wohnt im Norden'
-                           when 'Ludwigshafen' then 'wohnt im Westen'
-                           else 'wohnt auch'
-                           end as [Bewertung]
-
-from lieferant;
-
-delete lieferant where lnr > 'L05';
-
--- komplexes CASE
--- hierbei werden wie bei einer WHERE - Klausel Bollsche Ausdruecke 
--- Ueberprueft und bei Uebereinstimmungen ein Resultset zurueckgegeben
-
-select anr, aname, amenge, farbe, 
-       case
-       when amenge = 1200 and farbe = 'gruen' then 'toller Artikel'
-       when amenge = 1300 and farbe = 'blau' then 'noch toller'
-       else 'auch toll'
-       end as [Bewertung]
-from artikel;
-
--- Berechnen von Ergebnismengen und arbeiten mit Funktionen
-
--- Arithmetische Operatoren
-
-select 2 + 6;
-select 3 - 9;
-select 2 * 3;
-select 2 * 3.3;
-select 5 / 2;       -- Ganzzahl der Division
-select 5 / 2.0;     -- korrektes Ergebnis
-select 5 % 2;       -- ganzzahliger Divisionsrest
-
-select anr, aname, gewicht * 0.001 as [GEwicht in Kilo],
-       amenge * gewicht * 0.001 as [Gesamtlagergewicht]
-from artikel;
-
--- Operator + fuer die Verkettung von Zeichenfolgen
-
-select 'Der Lieferant' + lname + ' (' + lnr + '), wonht in ' +
-        lstadt + ' und hat einen Status von ' + cast(status as varchar(10))
-from lieferant;
-
--- Skalare Funktionen
-
-select lname, DATALENGTH(lname) as [Anzahl Byte] len(lname) as[Anzahl Zeichen]
-from lieferant;
-
-select host_name();             -- Name des Servers auf dem SQL Server laeuft
-select host_id();               -- ID der aktuellen Arbeitsstation
-
-select user_name();             -- Datenbankbenutzername
-select user_id();
-select suser_name()             -- Login
-select suser_id();
-
-select newid();
-
--- mathematische Funktionen
-
-select round(233.871, 2);       -- auf/abrunden
-select round(233.871, -2);
-
-select rand();                  -- eine zufaellige Zahl zwischen 0 und 1
-select round(rand() * 100,0)
-
--- Zeichenfolge Funktionen
-
-select char(39);                -- ASCI Zeichen Hochkomma
-
-select replace('Hustensaftschmuggler', 'saft', 'bier');
-
-select replicate('Bier' , 10); 
-
--- Namen und Wohnort der Lieferanten in einer Spalte mit einem Abstand von 20 
--- Leerzeichen
-
-select lname + space(20) + lstadt
-from lieferant;
-
---Gesucht ist der zweite Buchstabe jedes Lieferantennamen
-
-select lname, substring(lname,2,1) [zweiter Buchstabe]
-from lieferant
-
--- der Chef moechte die Lieferantennummern statt mit einem L mit einem K
--- beginnen lassen und der numerische Teil soll dreistellig sein und bei
--- 101 beginnen
-
-select lnr
-from lieferant;
-
---numerischen Teil und alfanumerischen Teil trenen
-
-select substring(lnr,2,2)
-from lieferant
-
--- Ziffern in Zahlen umwandeln
-
-select cast(substring(lnr,2,2) as int)
-from lieferant
-
--- um 100 erhoehen
-
-select cast(substring(lnr,2,2) as int) +100
-from lieferant
-
--- vor die Zahl das K setzten, dazu muss die Zahl vorher String werden
-
-select 'K' + cast(cast(substring(lnr,2,2) as int) +100 as varchar(4))
-from lieferant;
-
--- Datums- und Zeitfunktion
-
-select getdate();
-select year(getdate());             -- Ergebnis numersich
-select month(getdate());            -- Ergebnis numersich
-select day(getdate());              -- Ergebnis numersich
-
-select lnr, ldatum, day(ldatum), month(ldatum), year(ldatum)
-from lieferung;
-
-select date();
-
--- bestimmen welcher Wochentag der Wochenbeginn ist
-
--- fuer Deutschland
-
-select @@datefirst;                 -- 1 --> Montag
-
--- fuer USA
-
-set language us_englisch;
-select @@datefirst;                 -- 7 --> Sonntag
-
--- Russia
-set language russian;
-select @@datefirst;                 -- 1 --> Montag
-
--- Datumsfuntionen zum Berechnen von Datumswerten
-
-select datename(dw,getdate());      -- Mittwoch --> alfanumerisch
-select datename(mm,getdate());      -- Juni     --> alfanumerisch
-select datename(yyyy,getdate());    -- 2022     --> alfanumerisch
-
-select datepart(dd,getdate());      -- 1        --> numerisch
-select datepart(mm,getdate());      -- 6        --> numerisch
-select datepart(yyyy,getdate());    -- 2022     --> numerisch
-
--- Alle im August 1990 durchgefuehrten Lieferungen
-
-select * from lieferung
-where datepart(mm,ldatum) = 8
-and datepart (yyyy,ldatum) = 1990;
-
--- Zahlungstermin 37 Tage nach  Lieferdatum
-
-select lnr, anr, ldatum, dateadd(dd, 37, ldatum) as [Zahlung]
-from lieferung;
-
--- Anzahl der Monate seit Lieferung bis Heute
-
-select lnr, anr, ldatum, datediff(mm,ldatum,getdate()) as [Anzahl Monate]
-from lieferung;
-
--- Datum Konvertieren
-
--- nicht mit cast() konvertieren, da sonst unerwartete Ergebnisse
--- auftreten
-
--- Lieferungen in einem deutschen Format (dd.mm.yyyy) darstellen.
-
-select lnr, anr, cast(ldatum as char(10)) from Lieferung
-
--- besser ist die Funktion convert
-
-select lnr, anr, convert(char(10),ldatum,104) from Lieferung;
-
--	Uebung 3
-
-1.
-
--- Schreiben sie eine Abfrage auf Tabelle Lieferung 
--- in der Datenbank Standard, welche ihnen nachstehendes 
--- Ergebnis liefert
-
-select anr as [Artikelnummer], lmenge as [Liefermenge], 
-datename(dw,ldatum)+' der '+
-datename(dd,ldatum)+'. '+
-datename(mm,ldatum)+' '+
-datename(yyyy,ldatum) as [Lieferdatum]
-from lieferung;
-
-2.
-
--- Schreiben sie eine Abfrage auf Tabelle Lieferung 
--- in der Datenbank Standard, welche ihnen nachstehendes  
--- Ergebnis liefert
-
-select anr as 'Artikelnummer', convert(char(10),ldatum,104) as 'Lieferdatum',
-'vor ' + cast(datediff(dd, convert(datetime,ldatum,104), getdate())/365 as varchar(10)) +
-' Jahren und ' +
-cast(cast(datediff(dd, ldatum, getdate()) % 365.25/30.4375 as int) as varchar(2))
-+ ' Monaten.' as 'Die Lieferung ...'
-from lieferung;
-
-Tag 3:
-
-use standard
-go 
-
--- Gruppieren und Zusammenfassen von Dateien
-
--- Aggregatfunktionen
-
--- sie beziehen sich auf die Daten einer Spalte der Tabelle (ausser count)
--- und geben einen Zusammenfassungswert zurueck
-
--- das Ergebnis ist genau ein Wert
-
--- all Aggregatfunktionen ignorieren NULL-Marken
-
--- die fuenf am haufigsten gebrauchten Aggregatfunktionen sind
-
---      avg     (average) Durchschnitt der nummerischen Spaltenwerte
---      max     der groesste Spaltenwert
---      min     der kleinste Spaltenwert
---      sum     die Summe der nummerischen Spaltenwerte 
---      count   die Anzahl der Spaltenwerte
-
-select  sum(lmenge) as [Liefermenge gesamt],
-        max(lmenge) as [groesste Liefermenge],
-        min(lmenge) as [kleinste Liefermenge],
-        avg(lmenge) as [durchschnittliche Liefermenge],
-        count(lnr) as [Anzahl der Lieferungen]
-from lieferung;
-
--- Die groesste Liefermenge
-
-select max(lmenge) from lieferung;
-
--- Neugierig: ich will wissen wer das ist!
-
-select max(lmenge),lnr from lieferung;   -- Fehler
-
--- Alle Spalten ein der Select-Liste die kein Argument einer Aggregatfunktion
--- sind muessen in einer group by Klausel stehen
-
-select max(lmenge),lnr from lieferung
-group by lnr;
-
--- das veraendert die Fragestellung
--- die groesste Lieferung eines jeden Lieferanten
-
--- Agregatfunktion COUNT
-
-insert into Lieferant values('L10','Meier',null,'Erfurt')
-
--- Anzahl der Lieferanten
-
-select count(lnr) from lieferant;       -- immer richtig, weil die Primaer-Spalte 
-                                        -- als Argument verwendet wird
-
-select count(*) from lieferant;         -- immer richtig, weil es in einer Tabelle
-                                        -- keine leeren Datensaetze gibt
-                                        -- count(*) zaehlt die DS (Datensaetze) der
-                                        -- angebenen Tabelle
-
-select count(status) from lieferant;    -- nicht immer richtig,weil die Spalte 
-                                        -- Unbekannte WErte enthalten kann.
-
--- alle Aggregatfunktionen ignorieren NULL-Marken
-
-select count(lnr) from lieferant;       -- 6 DS
-select count(status) from lieferant;    -- 5 DS
-
----------------------------------------------------------------
-select *
-from lieferant
-
--- Das groesste Gesamtlagergewicht aller Artikel in Kilo
-
-select gewicht * 0.001 * amenge as [Gesamtlagergewicht]
-from artikel;
-
-select max(gewicht * 0.001 * amenge)
-from artikel;
-
--- die letzte Lieferung von 'A02'
-
-select max(ldatum) from lieferung where anr = 'A02'
-
--- Anzahl der Lieferanten die geliefert haben
-
-select count(lnr) from lieferung;          -- FALSCH -- liefert die Anzahl 
-                                                     -- der Lieferungen
-
-select count(distinct lnr) from lieferung; -- RICHTIG
-
--- Gesucht ist die groesste Status der Lieferanten am jeweiligen
--- Wohnort ...
-
-select lstadt, max(status)
-from lieferant
-group by lstadt;
-
--- ... wenn der duschschnittliche Statuswert am jeweiligen Wohnort nicht kleiner
--- als 15 ist
-
-select lstadt, max(status)
-from lieferant
-where avg(status) > 15
-group by lstadt;                -- FALSCH
-
--- in einer Where-KLausel darf niemals eine Aggregatfunktion stehen.
--- Die Bedingung ist eine Bedingung fuer die Gruppe!
-
-select lstadt, max(status)
-from lieferant
-group by lstadt
-having avg(status) > 15;
-
--- ohne die Aachner Lieferanten
-
-select lstadt, max(status)
-from lieferant
-group by lstadt
-having avg(status) > 15 and lstadt <> 'Aachen';     -- Unanstaendig
-
-select lstadt, max(status)
-from lieferant
-where lstadt <> 'Aachen'
-group by lstadt
-having avg(status) > 15;                            -- RICHTIG
-
-
---Uebung:
-1.
-
-select count(lnr) as [Anzahl der Lieferungen]
-from lieferung
-where datepart(mm,ldatum) = 8
-
--- pruefen mit
-select *
-from lieferung
-
-2.
-
-select count(lstadt) from lieferant;
-
-3.
-
-select lnr, min(lmenge) 
-as [kleinste Liefermenge] 
-from lieferung
-group by lnr                    
-
-4.
-
-select * from lieferant
-where lname like '[s]%'
-order by lname asc
-
--- oder
-
-select min(lname)
-from lieferant
-where lname like 's%';
-
-5.
-
-select astadt, max(amenge)
-from artikel
-group by astadt;
-
--- pruefen mit
-select * from artikel
-
-6.
-
-select lnr, 
-count (distinct anr)
-from Lieferung
-group by lnr;
-
-7.
-
-select anr
-from lieferung
-group by anr
-having count (anr) < 3
-
-8.
-
-select lnr, sum (lmenge)
-from lieferung
-where ldatum >= '13.07.1990'
-group by lnr
-having sum (lmenge) > 600
-
-9.
-
-select min(status), max(status), lstadt
-from lieferant
-where lnr between 'L01' and 'L99'
-group by lstadt
-having min(status) > 10 and max(status) <= 50;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tag 4
+TAG 5
 
 insert into lieferung values('L04', 'A03', 500, '10.06.2021');
 insert into lieferung values('L04', 'A02', 500, '20.06.2021');
@@ -1652,7 +1176,7 @@ insert into @tab select row_number() over(order by lnr asc) as [laufende Nummer]
 select * from @tab;
 go
 
-----------------------------------------------------------------------------------
+--
 
 use standard;
 go
@@ -1745,57 +1269,16 @@ where lstadt = 'Hamburg'
 and lnr in (select lnr
         from lieferung
         where ldatum > '01.08.90'
-        and anr in(select anr from artikel where farbe in('rot','blau')))
+        and anr in(select anr from artikel where farbe in('rot','blau'))
 
+---------------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tag 5:
+TAG 6:
 
 --Uebungen
 
 /*
-Alle Angaben zu den Liefranten deren Statuswert �ber dem durchschnittlichen
+Alle Angaben zu den Liefranten deren Statuswert ueber dem durchschnittlichen
 Statuswert der Lieferanten liegt, die in der gleichen Stadt wohnen
 wie Liefrant L02.
 */
@@ -1926,12 +1409,6 @@ select anr, aname
                  having count(anr) >=2)
 
 
-
-
-
-
-
-
 --Unterabfragen in der SELECT -Liste
 
 select anr, aname, gewicht,
@@ -1979,7 +1456,10 @@ from lieferant
 where exists (select *
               from lieferung
               where lieferant.lnr = lieferung.lnr);
-TAG 6:
+
+-------------------------------------------------------------------------------
+
+TAG 7:
 
 use standard
 go 
@@ -2090,7 +1570,7 @@ select distinct a.lnr, lname
 from lieferant as a join 
 lieferung as b on a.lnr = b.lnr;                        --am schnellsten
 
---------------------------------------------------------
+--
 
 -- hinter jedem Join steht ein kartesisches Produkt
 -- darum ist folgende Anweisung falsch!
@@ -2129,7 +1609,7 @@ alter table lieferung with nocheck
 add constraint lnr_fs foreign key(lnr) references lieferant(lnr);
 go
 
----------------------------------------------------------------------
+--
 
 -- linker OUTER Join
 
@@ -2163,15 +1643,7 @@ select a.lnr,lname
 from lieferant as a left join lieferung as b on a.lnr = b.lnr
 where b.lnr is null;
 
- 
-
-
-
-
-
-
-
-
+ TAG 8:
 
  1. 
 
@@ -2214,14 +1686,6 @@ where b.lnr is null;
  from artikel
  where gewicht in ('12','14','17');
 
- 
-
-
-
-
-
-
-
 6.
 
  -- die Daten aller Lieferungen von Lieferanten aus Hamburg 
@@ -2262,15 +1726,6 @@ where b.lnr is null;
  from artikel a, artikel b
  where a.astadt = b.astadt
  and a.anr < b.anr;
-
- 
-
-
-
-
-
-
-
 
 10.
  
@@ -2367,11 +1822,6 @@ where b.lnr is null;
                                         where c.lnr = a.lnr
                                         and c.anr = b.anr));
                                     
-
-
-
-
-
  18.
 
  -- die Namen aller Orte die Lager Ort von Artikeln oder Wohnort 
@@ -2394,9 +1844,6 @@ where b.lnr is null;
                       from lieferung
                       where anr = 'A05');
                                       
-
-
-
  20.
 
  -- Lieferantennummern und Namen der Lieferanten, die alle Artikel 
@@ -2447,9 +1894,6 @@ where b.lnr is null;
     where lstadt = 'Hamburg'
     and ldatum >= '05.05.1990';
 
- 
-
-
 24. 
  
  -- Anzahl der Lieferungen, die seit dem 05.05.1990 von Hamburger Lieferanten
@@ -2470,7 +1914,6 @@ where b.lnr is null;
     where lstadt not in     (select astadt
                              from artikel);
 
- 
 26.
 
  -- Ortsnamen, die sowohl Wohnort als auch Lagerort sind
@@ -2479,46 +1922,9 @@ where b.lnr is null;
     from lieferant, artikel
     where lstadt = astadt;
 
+-----------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tag 7:
+Tag 9:
 
   --pruefen mit
 
@@ -2672,43 +2078,21 @@ truncate table lieferung;
 
 select * from lieferant
 
+------------------------------------------------------------------------------
 
+Tag 10:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tag 8:
 
 -- Installieren von SQL Server --
 
--- das Produkt ist in der Express, Standard, Developer und Evaluierungsedition
+-- das Produkt ist in der Express, Standart, Developer und Evaluierungsedition
 -- erhaeltlich
 
 -- die express Edition ist kostenfrei
 -- es gibt Einschränkungen in der Groesse
 -- der Datenbanbkdateien und es gibt
 -- keine Moeglichkeit der hohen Verfügbarkeit, der
--- Automatisierung und der Ueberwachung
+-- Automatisierung un der Ueberwachung
 
 -- die Evaluierungsversion entspricht der Enterprise Edition
 -- alle Funktionen sind verfügbar
@@ -2724,16 +2108,16 @@ Tag 8:
 -- SQL Server unterstuetzt RAID 1, RAID 5, RAID 10
 
 -- arbeiten mit dezitierten Platten --> Datendateien und
--- Protokolldateien niemals auf ein Device
+-- protokolldateien niemals auf ein Device
 
 -- die Dienstkonten sollten nicht die lokalen (vorinstallierten) sein
 -- auch wenn der SQL Server auf einem lokalen (ohne Domäne) Rechner installiert wird 
 -- sollten Konten erstellt werden mit einem sicheren Kennwort
 
--- installieren sie nur die Dienste die sie unbedingt benoetigen
+-- installieren sie nur die Dienste die sie umbedingt benoetigen
 
 -- wir wollen den SQL Server 2016 Enterprise Edition ohne grafische Oberflaeche installieren
--- es ist jeweils ein Device fuer die Datenbankdateien und die Datenbankprotokolldateien
+-- es sit jeweils ein Device fuer die Datenbankdateien und die Datenbankprotokolldateien
 -- vorhanden, das gleiche gilt fuer die TEMPDB
 
 use master
@@ -2744,13 +2128,14 @@ go
 -- Typen
 -- Systemdatenbanken (master, msdb, tempdb, model, distribution)
 
--- Transaktion ist eine unteilbare Einheit die entweder ganz oder
--- ganz gar nicht ausgeführt wird
 
--- Beispiel: der Herr Beinlich hat für den Herrn Donath
---                              ein Programm geschrieben für das Homebanking
---                              Herr Donath will 5000 Euro von seinem Girokonto
---                              auf sein Sparkonto ueberweisen
+-- Transaktion ist eine unteilbaareEinheit die entweder ganz oder
+-- ganz garnicht ausgeführt wird
+
+-- Beispiel: dre Herr Beinlich hat für den Herrn Donath
+--				ein Programm geschrieben für das Homebanking
+--				Herr Donath will 5000 Euro von seinem Girokonto
+--				auf sein Sparkonto ueberweisen
 
 -- Datenbank erstellen
 
@@ -2767,6 +2152,7 @@ status tinyint null,
 lstadt nvarchar(200) null
 );
 go
+
 
 create table artikel
 (
@@ -2787,3 +2173,472 @@ lmenge int not null,
 ldatum datetime not null
 );
 go
+
+--------------------------------------------------------------------------
+
+Tag 11:
+
+insert into dbo.lieferant values('L01', 'Schmidt', 20, 'Hamburg');
+insert into dbo.lieferant values('L02', 'Jonas', 10, 'Ludwigshafen');
+insert into dbo.lieferant values('L03', 'Blank', 30, 'Ludwigshafen');
+insert into dbo.lieferant values('L04', 'Clark', 20, 'Hamburg');
+insert into dbo.lieferant values('L05', 'Adam', 30, 'Aachen');
+
+
+
+insert into dbo.artikel values('A01', 'Mutter', 'rot', 12, 'Hamburg', 800);
+insert into dbo.artikel values('A02', 'Bolzen', 'grün', 17, 'Ludwigshafen', 1200);
+insert into dbo.artikel values('A03', 'Schraube', 'blau', 17, 'Mannheim', 400);
+insert into dbo.artikel values('A04', 'Schraube', 'rot', 14, 'Hamburg', 900);
+insert into dbo.artikel values('A05', 'Nockenwelle', 'blau', 12, 'Ludwigshafen', 1300);
+insert into dbo.artikel values('A06', 'Zahnrad', 'rot', 19, 'Hamburg', 500);
+
+
+
+insert into dbo.lieferung values('L01', 'A01', 300, '18.05.90');
+insert into dbo.lieferung values('L01', 'A02', 200, '13.07.90');
+insert into dbo.lieferung values('L01', 'A03', 400, '01.01.90');
+insert into dbo.lieferung values('L01', 'A04', 200, '25.07.90');
+insert into dbo.lieferung values('L01', 'A05', 100, '01.08.90');
+insert into dbo.lieferung values('L01', 'A06', 100, '23.07.90');
+insert into dbo.lieferung values('L02', 'A01', 300, '02.08.90');
+insert into dbo.lieferung values('L02', 'A02', 400, '05.08.90');
+insert into dbo.lieferung values('L03', 'A02', 200, '06.08.90');
+insert into dbo.lieferung values('L04', 'A02', 200, '09.08.90');
+insert into dbo.lieferung values('L04', 'A04', 300, '20.08.90');
+insert into dbo.lieferung values('L04', 'A05', 400, '21.08.90');
+
+--pruefen mit
+
+select * from lieferant
+select * from lieferung
+select * from artikel
+
+--
+
+-- Einschränkungen für Tabellen erstellen
+-- Primary key, unique, foreign key, default, check
+-- sie dienen dazu Integritätsbedingungen innerhalb der
+-- Datenbank durchzusetzen
+-- diese Einschränkungen koennen für Tabellen mit und ohne DS erstellt
+-- werden
+-- sind in den Tabellen bereits Datensaetze enthalten, dann müssen sie
+-- die Einschränkung erfüllen 
+
+-- einige Einschraenkungen (primary key, unique) erzeugen Indizes
+
+-- Primaerschluessel
+
+alter table lieferant add constraint lnr_pk primary key(lnr);
+ 
+-- pruefen mit
+
+exec sp_help 'lieferant'
+
+-- standardmaessig erzeugt der Primaerschluessel einen clustered 
+-- (gruppierten) Index
+
+-- Test
+
+insert into lieferant values('L01','Kummer',5,'Erfurt'); -- L01 vorhanden
+insert into lieferant values('L06','Kummer',5,'Erfurt',0); -- geht
+
+-- Unique (vorbereitung)
+
+alter table lieferant add vers_nr varchar(20) null;
+
+update lieferant set vers_nr = 'ABC-12345-CC' where lnr = 'L01';
+update lieferant set vers_nr = 'DEF-12345-CC' where lnr = 'L02';
+update lieferant set vers_nr = 'GHI-12345-CC' where lnr = 'L03';
+update lieferant set vers_nr = 'JKL-12345-CC' where lnr = 'L04';
+update lieferant set vers_nr = 'MNO-12345-CC' where lnr = 'L05';
+update lieferant set vers_nr = 'MNO-12345-CC' where lnr = 'L06';
+
+alter table lieferant add consraint versnr_unq unique(vers_nr)
+
+--Test 
+
+insert into lieferant values ('L07','Jach',5,'Erfurt','ABC-12345-CC') -- Fehler
+insert into lieferant values ('L07','Jach',5,'Erfurt','QRS-12345-CC'); -- geht
+
+-- fuer eine Tabelle kann es mehr als eine Unique Einschraenkung geben
+-- Unique laesst null Marken zu ( nur eine )
+-- Unique erstellt standardmaessig einen nonclustered Index
+
+--
+
+-- Spalte vers_nr loeschen
+-- 1. das Constraint loeschen
+
+alter table lieferant drop constraint versnr_unq;
+
+-- 2. Tabellenspalten loeschen
+
+alter table lieferant drop drop column vers_nr;
+
+-- Default
+-- wenn fuer eine Spalte kein Wert angeben wird soll ein Defaultwert gelten.
+-- auf Primaerschluesselspalten werden keine Default erstellt
+
+alter table lieferant add constraint lstadt_def default 'Gotha' for lstadt;
+
+-- test
+
+insert into lieferant values ('L06','Kulesch',5, default);
+insert into lieferant (lnr,lname,status) values ('L08','Schoeppach',5);
+
+
+exec sp_help 'lieferant'
+select * from lieferant
+
+-- wenn eine NULL Marke aufgenommen werden muss, dann muessen sie diese
+-- explizit angegeben werden
+
+insert into lieferant values ('L09','Warnecke',5, null);
+
+-- Check Einschränkung
+
+-- mit dieser Einschraenkung koennen gültige Werte fuer eine Tabellenspalte 
+-- festgelegt werden
+-- pro Spalte kann es keine, eine oder mehrere Check Einschraenkungen geben
+--			-sie sollten sich nicht gegenseitig blockieren oder aufheben
+-- Check Einschraenkungen koennen sich auch auf andere Spalten der Tabelle 
+-- beziehen Beispiel: im Datensatz befindet sich ein Wert 'Name' und 'Vorname'
+--		es soll sichergestellt werden, dass wenn nur der Vorname angegeben
+--		wurde, das Einfuegen des DS abgewiesen wird
+
+
+-- Lieferantennamen sollen mit einem Buchstaben beginnen
+
+alter table lieferant add constraint lname_chk check(lname like '[A-Z]%');
+
+insert into lieferant values ('L10','8Sell',5, Jena); -- Fehler Name beginnt mit Zahl
+
+insert into lieferant values ('L10','Sell',15, default);
+
+-- der Statuswert darf nur zwischen 0 und 100 liegen
+ 
+ alter table lieferant add constraint status_chk check(status between 0 and 100);
+
+insert into lieferant values ('L11','Sell',105,'Erfurt');  -- Fehler
+
+insert into lieferant values ('L11','Sell',99,'Erfurt');
+
+
+-- Fremdschluessel ( foreign key)
+
+alter table lieferung add constraint lnr_fk foreign key(lnr) 
+						  references lieferant(lnr)
+						  on update cascade;
+
+alter table lieferung add constraint anr_fk foreign key(anr) 
+						  references artikel(anr);  -- erzeugt einen Fehler weil
+									    -- die Tabelle Artikel
+									    -- noch keinen Primaerschluessel
+									    -- besitzt
+
+alter table artikel add constraint anr_pk primary key(anr);	
+
+
+alter table lieferung add constraint anr_fk foreign key(anr)
+					  references artikel(anr);	    -- jetzt sollte es gehen
+
+
+-- Primaerschluessel fuer die Tabelle Lieferung
+
+-- zusammengesetzter Primaeerschluessel aus dem Spalten lnr, anr, ldatum
+
+alter table lieferung add constraint lief_pk primary key(lnr,anr,ldatum);
+
+--  beispiel fuer referentielle integritaet ( hat was mit dem foreign key zu tun)
+
+insert into lieferung values('L44','A02',500, GETDATE());
+
+--	Fehler wegen referentieller integritaet, den Lieferanten L44
+--	gibt es nicht !!!
+
+-- Opertationregel kaskadierndes aendern zwischen Lieferant und Lieferung
+
+select * from lieferant as a join lieferung as b on a.lnr = b.lnr
+where a.lnr = 'L04';
+
+update lieferant set lnr = 'L06' where lnr = 'L04';
+
+select * from lieferant as a join lieferung as b on a.lnr = b.lnr
+where a.lnr = 'L04';		--leer weil L04 nicht mehr vorhanden
+
+select * from lieferant as a join lieferung as b on a.lnr = b.lnr
+where a.lnr = 'L06';		-- dem  liefranten wurde die LNR
+							-- geaendert und seine Lieferungen wurden
+							-- ihm wieder zugeordnet
+
+
+
+
+
+exec sp_help 'lieferant'
+select * from lieferant
+delete lieferant
+where lnr = 'L11'
+
+
+alter table lieferung drop constraint lief_pk;
+
+alter table lieferung alter column lnr char(3) not null;
+alter table lieferung alter column anr char(3) not null;
+
+
+----------------------------------------------------------------------
+
+Tag 12:
+
+-- Dateigruppen erstellen
+
+use master
+go
+
+-- 1. Dateigruppen (Aktiv, Passiv und Indexe) erstellen
+
+alter database standard add filegroup passiv;
+go
+
+alter database standard add filegroup aktiv;
+go
+
+alter database standard add filegroup indexe;
+go
+
+-- 2. Datenbankdateien erstellen und den entsprechenden Dateigruppen 
+--	  zuordnen.
+
+alter database standard 
+add file (name = standard_passiv,
+			filename = 'j:\db.daten1\standard_passiv.ndf',
+			size = 20 GB,
+			maxsize = 25 GB,
+			filegrowth = 5%) to filegroup passiv;
+
+alter database standard 
+add file (name = standard_aktiv,
+			filename = 'k:\db.daten2\standard_aktiv.ndf',
+			size = 20 GB,
+			maxsize = 25 GB,
+			filegrowth = 5%) to filegroup aktiv;
+
+alter database standard
+add file (name = standard_index,
+			filename = 'l:\indexe\standard_index.ndf',
+			size = 10 GB,
+			maxsize = 20 GB,
+			filegrowth = 1 GB) to filegroup indexe;
+
+-- Damit Datenbankbenutzer die berechtigt sind in der Datenbank
+-- Tabellen, Sichten, Prozeduren oder Funktionen zu erstellen, diese nicht
+-- aus Versehen in der Dateigruppe PRIMARY erstellen, machen wir
+-- jetzt die Dateigruppe Passiv zur Default Dateigruppe
+
+alter database standard modify filegroup passiv default;
+go
+
+-- wunsch von Herrn Ruhland
+-- Maxsize von der Datei in PRIMARY und des Transaktionsprotokol
+-- aendern
+
+-- prüfen mit
+
+exec sp_helpdb standard;
+
+alter database standard
+modify file (name = standard,
+			 maxsize = 20 GB);
+go
+
+alter database standard
+modify file (name = standard_log,
+			 maxsize = 15 GB);
+go
+
+-- Tabelle in die entsprechende Dateigruppe verschieben
+-- Tabellen koennen nur in eine andere Dateigruppe verschoben werden in dem
+-- der gruppierte Index (Primaerschluessel) geloescht wird und sofort wieder
+-- neu erstellt wird und ihm der Dateigruppenname zugewiesen wird
+
+-- die Tabellen Lieferant und Artikel nach 'Passiv' verschieben
+
+
+
+use standard
+go
+
+-- Primaerschluessel loeschen
+
+alter table lieferung drop constraint lnr_fk;
+
+alter table lieferung drop constraint anr_fk;
+
+-- 1. Tabelle lieferant
+
+alter table lieferant drop constraint lnr_pk;
+go
+
+alter table lieferant add constraint lnr_pk primary key(lnr) on passiv;
+
+
+-- 2. Tabelle Artikel
+
+alter table artikel drop constraint anr_pk;
+go
+
+alter table artikel add constraint anr_pk primary key(anr) on passiv;
+
+
+-- 3. Tabelle Lieferung
+
+alter table lieferung drop constraint lief_pk;
+go
+
+alter table lieferung add constraint lief_pk primary key(lnr,anr,ldatum) on aktiv;
+
+-- Fremdschluessel
+
+alter table lieferung add constraint lnr_fk foreign key(lnr)
+			references lieferant(lnr) on update cascade;
+go
+
+alter table lieferung add constraint anr_fk foreign key(anr)
+			references artikel(anr);
+go
+
+exec sp_help lieferant;
+
+-------------------------------------------------------------------------------
+
+Übung Tag 13:
+
+use master
+go
+create database forschung
+on primary
+	(name = forschung_sk,
+	filename = 'e:\daten\forschung_sk.mdf',
+	size = 20MB,
+	maxsize = 50MB,
+	filegrowth = 5%),
+filegroup aktiv
+	(name = forschung_daten1,
+	filename = 'f:\daten\forschung_daten1.ndf',
+	size = 20MB,
+	maxsize = 50MB,
+	filegrowth = 10MB),
+filegroup passiv
+	(name = forschung_daten2,
+	filename = 'g:\daten\forschung_daten2.ndf',
+	size = 50MB,
+	maxsize = 200MB,
+	filegrowth = 5%)
+log on
+	(name = forschung_log,
+	filename = 'j:\protokoll\forschung_log.ldf',
+	size = 7MB,
+	maxsize = 25MB,
+	filegrowth = 5%);
+go
+
+
+
+alter database forschung
+modify filegroup passiv default;
+go
+
+use forschung;
+go
+
+create table orte
+(ortid int not null constraint ortid_ps primary key,
+plz char(5),
+ortsname nvarchar(100),
+constraint orte_unq unique(plz,ortsname));
+go
+
+-- Stammdatensaetze Orte fuer die Abteilungen
+
+insert into orte values(1,'98527','Suhl');
+insert into orte values(2,'99082','Erfurt');
+insert into orte values(3,'99423','Weimar');
+insert into orte values(4,'07743','Jena');
+insert into orte values(5,'99868','Gotha');
+insert into orte values(6,'99734','Nordhausen');
+insert into orte values(7,'99610','S�mmerda');
+go
+
+create table abteilung
+(abt_nr char(3) not null constraint abt_nr_ps primary key
+			  constraint abt_nr_chk check((abt_nr like 'a[1-9][0-9]'
+			  or abt_nr like 'a[1-9]')
+			  and cast(substring(abt_nr,2,2) as integer) between 1 and 50),
+ abt_name nchar(50) not null constraint abt_name_chk check(abt_name like '[A-Z]%'),
+ ortid int not null constraint aortid_fs references orte(ortid)
+					constraint aortid_chk check(ortid in(1,2,3,4,5,6,7)));
+go
+
+insert into abteilung values('a1','Forschung',1);
+go
+
+create table projekt
+(pr_nr char(4) not null constraint pr_nr_ps primary key 
+			 constraint pr_nr_chk check((pr_nr like 'p[1-9][0-9][0-9]'
+			 or pr_nr like 'p[1-9][0-9]'
+			 or pr_nr like 'p[1-9]')
+			 and cast(substring(pr_nr,2,3) as integer) between 1 and 150),
+ pr_name nchar(50) not null constraint pr_name_chk check(pr_name like '[A-Z]%'),
+ mittel money not null constraint mittel_chk check(mittel between 1 and 2000000));
+go
+
+insert into projekt values('p1','Mondlandung', 600000);
+go
+
+create table mitarbeiter
+(m_nr integer not null identity(1000,1) constraint m_nr_ps primary key,
+ m_name nchar(50) not null constraint m_name_chk check(m_name like '[A-Z]%'),
+ m_vorname nchar(50) null constraint m_vorname_chk check(m_vorname like '[A-Z]%'),
+ ortid int not null constraint mortid_fs references orte(ortid),
+ strasse nchar(100)null constraint strasse_chk check(strasse like '[A-Z]%'),
+ geb_dat date null,
+ abt_nr char(3) null constraint abt_nr_fs references abteilung(abt_nr)
+								  on update cascade);
+go
+
+insert into mitarbeiter values('M�ller','Bernd',1,'Hochheimer Stra�e 2',
+							   '18.09.1999', 'a1');
+go
+
+create table arbeiten
+(m_nr integer not null constraint m_nr_fs references mitarbeiter(m_nr)
+									on update cascade,
+ pr_nr char(4) not null constraint pr_nr_fs references projekt(pr_nr)
+									on update cascade ,
+ aufgabe nchar(200) null constraint aufgabe_chk check(aufgabe like '[A-Z]%'),
+ einst_dat date not null constraint einst_dat_chk 
+							 check(einst_dat >= dateadd(dd,-7,getdate())),
+ constraint arbeiten_ps primary key(m_nr,pr_nr)) on aktiv;
+go
+
+insert into arbeiten values(1000,'p1','Organisator',getdate());
+go
+
+create table telefon
+(m_nr integer not null constraint m_nr_fk references mitarbeiter(m_nr)
+									on update cascade,
+ vorw char(10) not null,
+ tel_nr char(10) not null,
+constraint tel_ps primary key(vorw, tel_nr));
+go
+
+insert into telefon values(1000, '0361', '563399');
+go
+
+Übung Ende
+
+---------------------------------------------------------------------------------------------
+
+Tag 14:
