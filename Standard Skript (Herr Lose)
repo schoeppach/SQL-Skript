@@ -765,272 +765,9 @@ where lnr between 'L01' and 'L99'
 group by lstadt
 having min(status) > 10 and max(status) <= 50;
 
-
-----------------------------------------------------------------------------------
-
-TAG 4:
-
-use standard;
-go
-
--- Select ohne Datenquellen
-
-select getdate()                            -- aktuelles Datum
-
-select 5 * 20;
-
--- Select mit Datenquellen
-
--- alle Angaben zu allen Lieferanten
-
-select *from lieferant;
-
--- Der Stern sollte nur fuer Testabfragen verwendet werden
--- Programmierer verwenden die Spaltennamen.
-
-select lnr, lname, status, lstadt
-from lieferant;
-
--- vollqualifierter Name
-
-select lnr, lname, status, lstadt
-from sql16serv1.standard.dbo.lieferant;
-
--- Aus der DB Standard heraus soll die Tabelle person in person der DB
--- AdventureWorks2012 abgefragt werden. DAbei soll Datenbankkontex des
--- aufrufenden Stapels nicht geaendert (use...) werden.
-
-select *
-from AdventureWorks2012.person.person;
-
-
--- ausgewaehlte Spaltenwerte
--- Wohnorte und Namen aller Lieferanten
-
-select lstadt, lname
-from lieferant
-
--- ausgewaehlte Datensaetze
--- dafuer wird die Where - Klausel benoetigt
-
--- Vergleichsoperatoren
-
--- Nummern, Namen und Farbe der Artikel die in Hamburg lagern
-
-select anr, aname, farbe from artikel
-where astadt = 'Hamburg';
-
--- Alle Lieferungen nach dem 01.08.90
-
-select * from lieferung
-where ldatum > '01.08.1990';
-
-select * from lieferung
-where ldatum > '1990-08-01';
-
--- Alle Lieferungen mit einer Liefermenge von 200 Stueck
-
-select * from lieferung
-where lmenge = 200;
-
--- Bereiche angeben
-
--- mit between koennen Bereiche definiert werden, Die angegebene Grenzen
--- (von-bis) sind einschlieslich
-
--- Alle Lieferungen zwischen dem 20.07.90 und dem 18.08.90
-
-select *
-from lieferung
-where ldatum between '20.07.90' and '18.08.90';
-
-select * from lieferung
-where ldatum >= '20.07.90' and ldatum <= '18.08.90';
-
--- Alle Liefrungen die nicht zwischen dem 20.07.90 und dem 18.08.90
--- geliefert wurden
-
-select *
-from lieferung
-where ldatum not between '20.07.90' and '18.08.90';
-
--- between wird hauptsaechlich auf numerische- und Datumsdatentypen
--- angewendet.
-
--- Alle Lieferanten deren Namen mit dem Buchstaben B bis J beginnen
-
-select * from lieferant
-where lname between 'B' and 'J';
-
--- Jonas wird nicht angezeigt. Warum?
-
-select * from lieferant
-where lname between 'B' and 'Jz';
-
--- Dafuer verwendet man like
-
---
--- Listen
-
--- Alle Lieferanten die in Hamburg oder in Aachen wohnen
-
-select * from lieferant
-where lstadt = 'Hamburg', 'Aachen'              -- geht nicht
-
-select * from lieferant
-where lstadt in('Hamburg', 'Aachen');
-
-select * from lieferant
-where lstadt = 'Hamburg' or lstadt = 'Aachen';
-
--- Alle Lieferanten die nicht in Hamburg oder in Aachen wohnen
-
-select * from lieferant
-where lstadt not in('Hamburg', 'Aachen');
-
---
-
--- neuen Lieferanten aufnehmen.
-
-insert into lieferant values('L10','Schul%ze',null, null);
-
-select * from lieferant;
-
--- LIKE Operator
-
--- kann nur auf alfanummerische Zeichen angewendet werden.
--- verwendet PLatzhalter (Jokerzeichen)
-
--- Alle Lieferanten die an einem Ort wohnen der mit dem Buchstaben L beginnt.
-
-select * from lieferant
-where lstadt like 'L%';
-
--- Alle Lieferanten deren Namen an zweiter Stelle den Buchstaben L haben.
-
-select * from lieferant
-where lname like '_L%';
-
--- Alle Lieferanten deren Namen an zweiter Stelle den Buchstaben L haben und
--- an vorletzter Stelle den Buchstaben R.
-
-select * from lieferant
-where lname like '_L%R_';
-
-insert into lieferant values('L11','Jach',null, null);
-
-insert into lieferant values('L12','Kulesch',null, null);
-
--- Lieferanten deren Namen mit dem Buchstaben B bis J beginnen
-
-select * from lieferant
-where lname like '[B-J]%';
-
-select * from lieferant
-where lname like '[BJ]%';
-
---Alle Lieferanten in deren Namen an keiner Stelle ein A steht
-
-select * from lieferant
-where lname like '%[^a]%';                --GGA ---> Katzenklo    
-
--- besser
-
-select * from lieferant
-where lname not like '%a%';
-
--- Gesucht sind die Lieferanten in deren Namen ein % - Zeichen steht
-
-select * from lieferant
-where lname like '%%%';                 --- ???????????
-
--- Da % ein Platzhalter ist , muss man mit einer Maske arbeiten.
-
-select * from lieferant
-where lname like '%y%%' escape 'y';
-
---
--- Alle Lieferanten deren Wohnort nicht bekannt ist
-
-select * from lieferant
-where lstadt = null;                    -- kein Fehler, sondern eine leere Menge
-                                        -- jeder Vergleich mit Unbekannt ergibt
-                                        -- Unbekannt
-
-insert into lieferant values('L13','Schoeppach','99','Erfurt');
-
-select * from lieferant;
-
--- Alle Lieferanten ohne Statuswert sollen mit einem Angenommenen Status von 50 
--- angezeigt werden
-
-select lnr, lname, isnull(status,50) as [status], lstadt
-from lieferant;
-
---
-
--- Arbeit mit mehreren Bedingungen in der WHERE - Klausel
-
-select * from artikel
-where gewicht > 15 and astadt like '[E-L]%'or amenge > 700;
-
-select * from artikel
-where gewicht > 15 and(astadt like '[E-L]%'or amenge > 700);
-
-1.
-
-select *
-from lieferung
-where ldatum between '05.08.1990' and '06.08.1990'
-
-select * 
-from lieferung
-where ldatum in ('05.08.1990', '06.08.1990')
-
-select * 
-from lieferung
-where ldatum >= '05.08.1990' and ldatum <= '06.08.1990';
-
-2.
-
-select  anr, aname from artikel
-where Farbe in('rot','blau') and astadt ='Hamburg' or 
-amenge between 900 and 1500 and aname like '%a%';
-
-3.
-
-select * from lieferant
-where lname between 'A' and 'G';
-
-select * from lieferant
-where lname like '[a-g]%';
-
-4.
-
--- Lieferanten mit BCS am Anfang und an 3. Stelle ein a
-
-select * from lieferant
-where lname like '[BCS]_a%_' and lstadt not like 'ried%';
-
--	Ueberpruefen mit
-
-insert into lieferant values('L20', 'Braun', 5, 'Riednordhausen');
-go
-
-5.
-
-select * from artikel
-where gewicht = 0 or gewicht is null;
-
-select * from artikel
-
-insert into artikel values('A11', 'Kurwa', 'rot', null, 'Riednordhausen', 100)
-
-insert into artikel values('A12', 'Lauch', 'blau', 0, 'Mittelried', 1200)
-
 -----------------------------------------------------------------------------------
 
-TAG 5
+TAG 4
 
 insert into lieferung values('L04', 'A03', 500, '10.06.2021');
 insert into lieferung values('L04', 'A02', 500, '20.06.2021');
@@ -1273,7 +1010,7 @@ and lnr in (select lnr
 
 ---------------------------------------------------------------------------------
 
-TAG 6:
+TAG 5:
 
 --Uebungen
 
@@ -1459,7 +1196,7 @@ where exists (select *
 
 -------------------------------------------------------------------------------
 
-TAG 7:
+TAG 6:
 
 use standard
 go 
@@ -1643,7 +1380,7 @@ select a.lnr,lname
 from lieferant as a left join lieferung as b on a.lnr = b.lnr
 where b.lnr is null;
 
- TAG 8:
+ TAG 7:
 
  1. 
 
@@ -1773,9 +1510,6 @@ where b.lnr is null;
    select avg(lmenge)
    from lieferung
    where anr = 'A01' 
-
- 
-
 
 14.
 
@@ -1924,7 +1658,7 @@ where b.lnr is null;
 
 -----------------------------------------------------------------------
 
-Tag 9:
+Tag 8:
 
   --pruefen mit
 
@@ -2080,7 +1814,7 @@ select * from lieferant
 
 ------------------------------------------------------------------------------
 
-Tag 10:
+Tag 9:
 
 
 -- Installieren von SQL Server --
@@ -2176,7 +1910,7 @@ go
 
 --------------------------------------------------------------------------
 
-Tag 11:
+Tag 10:
 
 insert into dbo.lieferant values('L01', 'Schmidt', 20, 'Hamburg');
 insert into dbo.lieferant values('L02', 'Jonas', 10, 'Ludwigshafen');
@@ -2390,7 +2124,7 @@ alter table lieferung alter column anr char(3) not null;
 
 ----------------------------------------------------------------------
 
-Tag 12:
+Tag 11:
 
 -- Dateigruppen erstellen
 
@@ -2513,7 +2247,7 @@ exec sp_help lieferant;
 
 -------------------------------------------------------------------------------
 
-Übung Tag 13:
+Übung Tag 12:
 
 use master
 go
@@ -2641,4 +2375,4 @@ go
 
 ---------------------------------------------------------------------------------------------
 
-Tag 14:
+Tag 13:
