@@ -1,5 +1,4 @@
------------------------------------------------------------------------------
-
+-------------------------------------------------------------------
 TAG 1:
 
 use standard;
@@ -101,8 +100,7 @@ where lname between 'B' and 'Jz';
 
 -- Dafuer verwendet man like
 
---
-
+------
 -- Listen
 
 -- Alle Lieferanten die in Hamburg oder in Aachen wohnen
@@ -121,7 +119,7 @@ where lstadt = 'Hamburg' or lstadt = 'Aachen';
 select * from lieferant
 where lstadt not in('Hamburg', 'Aachen');
 
---
+------
 
 -- neuen Lieferanten aufnehmen.
 
@@ -182,7 +180,7 @@ where lname like '%%%';                 --- ???????????
 select * from lieferant
 where lname like '%y%%' escape 'y';
 
---
+------
 
 -- Alle Lieferanten deren Wohnort nicht bekannt ist
 
@@ -201,7 +199,8 @@ select * from lieferant;
 select lnr, lname, isnull(status,50) as [status], lstadt
 from lieferant;
 
---
+------
+
 -- Arbeit mit mehreren Bedingungen in der WHERE - Klausel
 
 select * from artikel
@@ -560,7 +559,7 @@ cast(cast(datediff(dd, ldatum, getdate()) % 365.25/30.4375 as int) as varchar(2)
 + ' Monaten.' as 'Die Lieferung ...'
 from lieferung;
 
--------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 TAG 3:
 
@@ -571,14 +570,14 @@ go
 
 -- Aggregatfunktionen
 
--- sie beziehen sich auf die DAten einer Spalte der Tabelle (ausser count)
+-- sie beziehen sich auf die Daten einer Spalte der Tabelle (ausser count)
 -- und geben einen Zusammenfassungswert zurueck
 
 -- das Ergebnis ist genau ein Wert
 
 -- all Aggregatfunktionen ignorieren NULL-Marken
 
--- die fuenf am haeufigsten gebrauchten Aggregatfunktionen sind
+-- die fuenf am haufigsten gebrauchten Aggregatfunktionen sind
 
 --      avg     (average) Durchschnitt der nummerischen Spaltenwerte
 --      max     der groesste Spaltenwert
@@ -621,8 +620,7 @@ select count(lnr) from lieferant;       -- immer richtig, weil die Primaer-Spalt
 
 select count(*) from lieferant;         -- immer richtig, weil es in einer Tabelle
                                         -- keine leeren Datensaetze gibt
-                                        -- count(*) zaehlt die DS 
-   --(Datensaetze) der
+                                        -- count(*) zaehlt die DS (Datensaetze) der
                                         -- angebenen Tabelle
 
 select count(status) from lieferant;    -- nicht immer richtig,weil die Spalte 
@@ -633,7 +631,7 @@ select count(status) from lieferant;    -- nicht immer richtig,weil die Spalte
 select count(lnr) from lieferant;       -- 6 DS
 select count(status) from lieferant;    -- 5 DS
 
---
+-------
 select *
 from lieferant
 
@@ -645,7 +643,7 @@ from artikel;
 select max(gewicht * 0.001 * amenge)
 from artikel;
 
--- die letzte Liefereung von 'A02'
+-- die letzte Lieferung von 'A02'
 
 select max(ldatum) from lieferung where anr = 'A02'
 
@@ -656,7 +654,7 @@ select count(lnr) from lieferung;          -- FALSCH -- liefert die Anzahl
 
 select count(distinct lnr) from lieferung; -- RICHTIG
 
--- Gesucht ist die groesste Status der Liefranten am jeweiligen
+-- Gesucht ist die groesste Status der Lieferanten am jeweiligen
 -- Wohnort ...
 
 select lstadt, max(status)
@@ -671,7 +669,7 @@ from lieferant
 where avg(status) > 15
 group by lstadt;                -- FALSCH
 
--- in einer Where -KLausel darf niemals eine Aggregatfunktion stehen.
+-- in einer Where-KLausel darf niemals eine Aggregatfunktion stehen.
 -- Die Bedingung ist eine Bedingung fuer die Gruppe!
 
 select lstadt, max(status)
@@ -691,6 +689,7 @@ from lieferant
 where lstadt <> 'Aachen'
 group by lstadt
 having avg(status) > 15;                            -- RICHTIG
+
 
 --Uebung:
 1.
@@ -765,7 +764,7 @@ where lnr between 'L01' and 'L99'
 group by lstadt
 having min(status) > 10 and max(status) <= 50;
 
------------------------------------------------------------------------------------
+---------------------------------------------------------------------
 
 TAG 4
 
@@ -913,7 +912,7 @@ insert into @tab select row_number() over(order by lnr asc) as [laufende Nummer]
 select * from @tab;
 go
 
---
+-------
 
 use standard;
 go
@@ -1006,9 +1005,9 @@ where lstadt = 'Hamburg'
 and lnr in (select lnr
         from lieferung
         where ldatum > '01.08.90'
-        and anr in(select anr from artikel where farbe in('rot','blau'))
+        and anr in(select anr from artikel where farbe in('rot','blau')))
 
----------------------------------------------------------------------------------
+-----------------------------------------------------------------------
 
 TAG 5:
 
@@ -1127,7 +1126,6 @@ where lnr in(select lnr
 von Lieferanten die ebenfalls mehr als zweimal geliefert haben.
 */
 
-
 select anr, aname
     from artikel
     where anr in(select anr
@@ -1144,7 +1142,6 @@ select anr, aname
                  where lnr in(select lnr from lieferung group by lnr having count(lnr) > 2)
                  group by anr
                  having count(anr) >=2)
-
 
 --Unterabfragen in der SELECT -Liste
 
@@ -1194,7 +1191,7 @@ where exists (select *
               from lieferung
               where lieferant.lnr = lieferung.lnr);
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------
 
 TAG 6:
 
@@ -1307,7 +1304,7 @@ select distinct a.lnr, lname
 from lieferant as a join 
 lieferung as b on a.lnr = b.lnr;                        --am schnellsten
 
---
+-------
 
 -- hinter jedem Join steht ein kartesisches Produkt
 -- darum ist folgende Anweisung falsch!
@@ -1346,7 +1343,7 @@ alter table lieferung with nocheck
 add constraint lnr_fs foreign key(lnr) references lieferant(lnr);
 go
 
---
+-------
 
 -- linker OUTER Join
 
@@ -1380,7 +1377,11 @@ select a.lnr,lname
 from lieferant as a left join lieferung as b on a.lnr = b.lnr
 where b.lnr is null;
 
+ ---------------------------------------------------------------
+
  TAG 7:
+
+ Übung 3
 
  1. 
 
@@ -1421,9 +1422,9 @@ where b.lnr is null;
 
  select anr, aname
  from artikel
- where gewicht in ('12','14','17');
+ where gewicht in ('12','14','17')
 
-6.
+ 6.
 
  -- die Daten aller Lieferungen von Lieferanten aus Hamburg 
 
@@ -1464,7 +1465,7 @@ where b.lnr is null;
  where a.astadt = b.astadt
  and a.anr < b.anr;
 
-10.
+ 10.
  
  -- Nummern aller Lieferanten, die mindestens einen Artikel geliefert
  -- haben den auch Lieferant 'L03' geliefert hat
@@ -1511,7 +1512,7 @@ where b.lnr is null;
    from lieferung
    where anr = 'A01' 
 
-14.
+ 14.
 
  -- Gesamtliefermenge aller Lieferungen des Artikels A01 durch den Lieferanten
  -- L02
@@ -1601,7 +1602,6 @@ where b.lnr is null;
     where a.lnr = b.lnr
     and status > (select min (status) from lieferant);
 
-
  22.
 
  -- Nummern und Bezeichnung aller Artikel, deren durchschnittliche Liefermenge 
@@ -1656,9 +1656,9 @@ where b.lnr is null;
     from lieferant, artikel
     where lstadt = astadt;
 
------------------------------------------------------------------------
+---------------------------------------------------------------
 
-Tag 8:
+TAG 8:
 
   --pruefen mit
 
@@ -1812,10 +1812,9 @@ truncate table lieferung;
 
 select * from lieferant
 
-------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 
 Tag 9:
-
 
 -- Installieren von SQL Server --
 
@@ -1866,7 +1865,7 @@ go
 -- Transaktion ist eine unteilbaareEinheit die entweder ganz oder
 -- ganz garnicht ausgeführt wird
 
--- Beispiel: dre Herr Beinlich hat für den Herrn Donath
+--beispiel: dre Herr Beinlich hat für den Herrn Donath
 --				ein Programm geschrieben für das Homebanking
 --				Herr Donath will 5000 Euro von seinem Girokonto
 --				auf sein Sparkonto ueberweisen
@@ -1910,7 +1909,7 @@ go
 
 --------------------------------------------------------------------------
 
-Tag 10:
+TAG 10:
 
 insert into dbo.lieferant values('L01', 'Schmidt', 20, 'Hamburg');
 insert into dbo.lieferant values('L02', 'Jonas', 10, 'Ludwigshafen');
@@ -1942,13 +1941,13 @@ insert into dbo.lieferung values('L04', 'A02', 200, '09.08.90');
 insert into dbo.lieferung values('L04', 'A04', 300, '20.08.90');
 insert into dbo.lieferung values('L04', 'A05', 400, '21.08.90');
 
---pruefen mit
+--prüfen mit
 
 select * from lieferant
 select * from lieferung
 select * from artikel
 
---
+-----------------------------------------------------------------------
 
 -- Einschränkungen für Tabellen erstellen
 -- Primary key, unique, foreign key, default, check
@@ -1965,7 +1964,7 @@ select * from artikel
 
 alter table lieferant add constraint lnr_pk primary key(lnr);
  
--- pruefen mit
+-- prüfen mit
 
 exec sp_help 'lieferant'
 
@@ -1999,7 +1998,7 @@ insert into lieferant values ('L07','Jach',5,'Erfurt','QRS-12345-CC'); -- geht
 -- Unique laesst null Marken zu ( nur eine )
 -- Unique erstellt standardmaessig einen nonclustered Index
 
---
+-------
 
 -- Spalte vers_nr loeschen
 -- 1. das Constraint loeschen
@@ -2011,7 +2010,7 @@ alter table lieferant drop constraint versnr_unq;
 alter table lieferant drop drop column vers_nr;
 
 -- Default
--- wenn fuer eine Spalte kein Wert angeben wird soll ein Defaultwert gelten.
+-- wenn fuer eine Spalte kein Wert angeben wird soll ein DEfaultwert gelten.
 -- auf Primaerschluesselspalten werden keine Default erstellt
 
 alter table lieferant add constraint lstadt_def default 'Gotha' for lstadt;
@@ -2032,9 +2031,9 @@ insert into lieferant values ('L09','Warnecke',5, null);
 
 -- Check Einschränkung
 
--- mit dieser Einschraenkung koennen gültige Werte fuer eine Tabellenspalte 
+-- mit dieser Einschraenkung kenne gültige Werte fuer eine Tabellenspalte 
 -- festgelegt werden
--- pro Spalte kann es keine, eine oder mehrere Check Einschraenkungen geben
+-- pro Spalte kann es keine, eine oder mehrere Check EInschraenkungen geben
 --			-sie sollten sich nicht gegenseitig blockieren oder aufheben
 -- Check Einschraenkungen koennen sich auch auf andere Spalten der Tabelle 
 -- beziehen Beispiel: im Datensatz befindet sich ein Wert 'Name' und 'Vorname'
@@ -2067,15 +2066,15 @@ alter table lieferung add constraint lnr_fk foreign key(lnr)
 
 alter table lieferung add constraint anr_fk foreign key(anr) 
 						  references artikel(anr);  -- erzeugt einen Fehler weil
-									    -- die Tabelle Artikel
-									    -- noch keinen Primaerschluessel
-									    -- besitzt
+													-- die Tabelle Artikel
+													-- noch keinen Primaerschluessel
+													-- besitzt
 
 alter table artikel add constraint anr_pk primary key(anr);	
 
 
 alter table lieferung add constraint anr_fk foreign key(anr)
-					  references artikel(anr);	    -- jetzt sollte es gehen
+					  references artikel(anr);			-- jetzt sollte es gehen
 
 
 -- Primaerschluessel fuer die Tabelle Lieferung
@@ -2091,7 +2090,7 @@ insert into lieferung values('L44','A02',500, GETDATE());
 --	Fehler wegen referentieller integritaet, den Lieferanten L44
 --	gibt es nicht !!!
 
--- Opertationregel kaskadierndes aendern zwischen Lieferant und Lieferung
+-- Opertationregel kaskadierndes Ändern zwischen Lieferant und Lieferung
 
 select * from lieferant as a join lieferung as b on a.lnr = b.lnr
 where a.lnr = 'L04';
@@ -2121,10 +2120,9 @@ alter table lieferung drop constraint lief_pk;
 alter table lieferung alter column lnr char(3) not null;
 alter table lieferung alter column anr char(3) not null;
 
+-----------------------------------------------------------------------------
 
-----------------------------------------------------------------------
-
-Tag 11:
+Tag 12:
 
 -- Dateigruppen erstellen
 
@@ -2167,7 +2165,7 @@ add file (name = standard_index,
 			filegrowth = 1 GB) to filegroup indexe;
 
 -- Damit Datenbankbenutzer die berechtigt sind in der Datenbank
--- Tabellen, Sichten, Prozeduren oder Funktionen zu erstellen, diese nicht
+-- Tabellen, Sichten, Prozeduren oder Funktionen zu erstelln, diese nicht
 -- aus Versehen in der Dateigruppe PRIMARY erstellen, machen wir
 -- jetzt die Dateigruppe Passiv zur Default Dateigruppe
 
@@ -2198,7 +2196,6 @@ go
 -- neu erstellt wird und ihm der Dateigruppenname zugewiesen wird
 
 -- die Tabellen Lieferant und Artikel nach 'Passiv' verschieben
-
 
 
 use standard
@@ -2245,10 +2242,12 @@ go
 
 exec sp_help lieferant;
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------
 
-Übung Tag 12:
+TAG 13:
 
+Übung 4
+ 
 use master
 go
 create database forschung
@@ -2294,7 +2293,7 @@ ortsname nvarchar(100),
 constraint orte_unq unique(plz,ortsname));
 go
 
--- Stammdatensaetze Orte fuer die Abteilungen
+-- Stammdatens�tze Orte f�r die Abteilungen
 
 insert into orte values(1,'98527','Suhl');
 insert into orte values(2,'99082','Erfurt');
@@ -2373,6 +2372,554 @@ go
 
 Übung Ende
 
----------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------
 
-Tag 13:
+TAG 14
+
+/* Datenbankobjekte um Abfragen effektiver einzusetzen und
+schneller zu machen
+
+-Sichten
+-Indizes
+-Transact SQL Stapelprogramme
+-Cursor
+-gespeicherte Prozeduren
+-benutzerdefinierte Funktion
+-Trigger
+
+*/
+
+-- Views (gespeicherte Abfragen)
+-- Vorteil die Abfrage wird bei der ersten Ausführung kompiliert
+--		und der Ausführungspan in den Prozerdurcache gelegt.
+--		jeder weiter Aufruf der Sicht verwendet den breeits kompilierten
+--		Ausführungsplan
+
+-- eine Sicht ermöglicht eine horizontale und vertikale Partionierung von
+-- Tabelleninfos
+-- Beispiel: Der Meister des Mesiterbereichs 2 soll nur die Mitarbeiter+
+--		angeszeigt bekommen die in seinem Meisterbereich arbeiten (horizontal)
+--		aber ohne die Spalte 'gehalt' (vertikal)
+
+-- Sichten werden mit create view .. erstellt, mit alter view ... geaendert
+-- und mit drop view .. geloescht
+
+-- die create view - Anweisung darf nicht mit anderen SQL Anweisungen in einem
+-- Stapel stehen. mit 'go' seperieren
+
+create view hamb_lief
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg';
+go
+
+-- wo werden Sichten gespeichert?
+
+select * from sys.objects where object_id = object_id('hamb_lief');
+select * from sys.views where object_id = object_id('hamb_lief');
+
+-- wo liegt die Sichtdefinition
+
+select * from sys.sql_modules where object_id = object_id('hamb_lief');
+
+--oder
+
+exec sp_helptext 'hamb_lief';
+
+select * from hamb_lief;
+go
+
+-- view definition verschluesseln
+
+alter view hamb_lief
+with encryption
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg';
+go
+ 
+ --pruefen mit
+
+exec sp_helptext 'hamb_lief';
+
+-- rückgaengig mit
+
+alter view hamb_lief
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg';
+go
+
+--  Sichten mit Join
+
+create view lieflief
+as
+select a.lnr, lname, status, lstadt, anr, lmenge, ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr;
+go
+
+select * from lieflief;
+go
+, 
+-- Datenaenderung ueber Sichten (Insert, Update, Delete)
+
+-- Dateneaenderungen auf Sichten die sich auf mehr als eine Tabelle beziehen
+-- sind nicht moeglich oder nur mit INSTEAD -Trigger moeglich
+
+--Insert
+
+insert into hamb_lief values('L30','Kirsten','Hamburg');
+
+select * from hamb_lief;
+select * from lieferant;
+
+insert into hamb_lief values('L31','Meier','Weimar');
+
+
+select * from hamb_lief;
+select * from lieferant;
+
+-- Sicht aendern with check option
+
+alter view hamb_lief
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg'
+with check option;
+go
+
+
+insert into hamb_lief values('L32','Lauch','Weimar');  --Fehler
+
+insert into hamb_lief values('L32','Lauch','Hamburg'); -- Geht
+
+----
+
+create view hamb_lief1
+as
+select lnr, lname
+from lieferant
+where lstadt = 'Hamburg'
+with check option;
+go
+
+select * from hamb_lief1;
+
+insert into hamb_lief1 values('L33','Maria','Hamburg');  -- geht nicht
+
+insert into hamb_lief1 values('L33','Maria');			 -- geht nicht
+
+-- Update
+
+update hamb_lief
+set lstadt = 'Erfurt'
+where lnr = 'L32';				-- Fehler wegen der with check option
+
+update hamb_lief
+set lname = 'Kaltduscher'
+where lnr = 'L32';				-- geht
+
+
+select * from hamb_lief;
+
+/*
+was wurde in der Datenbank gemacht
+
+update lieferant
+set lname = 'Kaltduscher'
+where lnr = 'L32'				-- kommt von Update
+and lstadt = 'Hamburg';			-- kommt von der Sicht
+*/
+
+-- DELETE
+
+-- niemals nicht ohne where - Klausel  
+-- weil
+-- delete hamb_lief;			-- loescht alle Hamburger
+--								-- Lieferanten
+
+delete hamb_lief
+from hamb_lief as a left join lieferung as b on a.lnr = b.lnr
+where b.lnr is null;
+
+-- loescht alle Hamburger Lieferanten ohne Lieferung
+
+select * from Hamb_lief;
+
+----------------------------------------------------------------------
+
+TAG 15:
+
+use standard
+go
+
+create table indtest
+(id int not null,
+namen varchar(100) not null,
+vname varchar(100) null,
+ort varchar(200) not null);
+go
+
+declare @x int = 1;
+while @x <= 1000000
+begin
+	insert into indtest 
+	values(@x, cast(@x as varchar(10)) + 'Warmduschwer',
+			'Max_' + cast(@x as varchar(10)),
+			cast(@x as varchar(10)) + '_Suhl_' + cast(@x as varchar(10)));
+	set @x +=1;
+	--set @x = @x +1;
+end;
+go
+
+----
+
+select count(*) from indtest;
+
+select * from indtest;
+
+select * from sys.indexes where object_id = object_id('indtest)';
+
+-- Fragmentierungsgrad des Haufens
+
+select * from
+sys.dm_db_index_physical_stats(db_id(),object_id('indtest'),null,null,null);
+
+
+-- eine Tabelle kann maxsimal 1000 Indizes besitzen
+-- 1 gruppierten Index und 999 nicht gruppierte Indizes
+
+-- Besitzt eine Tabelle keinen gruppierten Index bleiben die Daten in der
+-- Speicherorganisationsform 'Haufen'
+
+
+create index vname_ind on indtest(vname);
+
+-- welche Indizes gibt es fuer die Tabelle
+
+select * from sys.indexes where object_id = object_id('indtest)';
+
+-- Fragmentierungsgrad des Haufens
+
+select * from
+sys.dm_db_index_physical_stats(db_id(),object_id('indtest'),null,null,null);
+
+select * from indtest where vname like '%3099%';
+
+-- sobald ein gruppierter Index erstellt wird, wird die physische Reihenfolge
+-- der Datensaetze entsprechend der indizierten Reihenfolge geaendert
+
+-- Primaerschlüssel fuer die Tabelle indtest
+
+alter table indtest add constraint id_pk primary key(id);
+
+select * from indtest where vname like '%3099%';
+
+select * from indtest where id between 3055 and 10344;
+
+----
+
+-- welche Indizes gibt es fuer die Tabelle
+
+select * from sys.indexes where object_id = object_id('indtest)';
+
+-- Fragmentierungsgrad des Haufens
+
+select * from
+sys.dm_db_index_physical_stats(db_id(),object_id('indtest'),null,null,null);
+
+----
+
+select astadt
+from artikel
+where aname = 'Schraube' and astadt like '%m%';
+
+-- zusammengesetzter Index
+
+create index aname_astadt_ind on artikel(aname,astadt);
+
+select aname, astadt, amenge
+from artikel
+where farbe = 'rot';
+
+-- abgedeckter Index ( der Index deckt die Abfgrage vollstaendig ab)
+
+create index farbe_art on artikel(farbe, aname, astadt, amenge);
+
+-- Index mit eingeschlossenen Spalten
+-- wird verwendet wenn die Anzahl der Spalten des zusammengesetzten Index
+-- 16 Spalten überschreitet und/oder die Länge der Spaltenwerte groesser
+-- 900 Byte ist.
+
+create index farbe_art_inc on artikel(farbe) include (aname, astadt, amenge);
+
+select aname, astadt, amenge
+from artikel
+where farbe = 'rot';
+
+-- damit ist der zusammengesetzte Index ueberfluessig und kann geloescht werden
+
+drop index artikel.farbe_art;
+
+select * from artikel
+
+-- Extras SQL Server Profiler 
+
+-- Indexfragmentierung
+-- die Fragmenntierung von Indizes stellen Sie mit der dynamischen Verwaltungs-
+-- funktion sys.de_db_indexphysical_stats() fest
+-- wichig dabei ist die Spalte avg_fragmentation_in_percent
+
+-- bei Fragmetation bis 30 % wird der Index neu Organisiert
+
+alter index farbe_art_inc on artikel reorganize;
+
+-- bei Fragmentation ueber 30 % wird der Index neu gebildet
+
+alter index farbe_art_inc on artikel rebuild;
+
+----
+
+use standard;
+go
+
+-- Programmieren mit Tranact ´SQL
+
+-- Begriffe:
+-- Script -- ist eine Datei welche mit der Endung .sql abgespeichert wird
+-- Stapel .. ein Script besteht aus einem oder mehrern Stapel
+--		ein Stapel endet mit einem Stapelzeichen "go"
+--		eine Variable welche in einem Stapel deklariert wurde kann in
+--		einem anderen Stapel nicht verwendet werden -- sie ist nicht bekannt
+
+-- Anweisungsbloecke
+-- werden verwendet in einer WHILE - Schleife, im IF und ELSE Zweig einer
+-- IF/ELSE - ANweisung und im Body von benutzerdefinierten Funktionen
+
+begin
+	select @@version;
+	select * from lieferant
+end;
+
+-- Meldungen
+-- einfache Meldungen mit PRINT
+-- Print gibt nur Zeichenfolgen zurück
+
+print 'Heute ist' + datename(dw,getdate()) + 
+	  'der' + convert(char(10),getdate(),104)
+
+-- Meldungen mit raiserror
+-- mit raiserror koennen benutzerdefinierte Meldungen, Systemmeldungen
+-- und AdHoc - Meldungen verwendet werden
+
+-- Systemmeldungen und benutzerdefinierte Meldungen werden in sys.messages
+-- gespeichert
+
+select * from sys.messages where language_id = 1031;
+
+
+-- benutzerdefinierte Meldungen beginnen bei der messages_id > 50000
+-- Raiseerrrormeldungen besitzen einen Schweregrad
+--  1 - 10 -- einfache Fehler die vom Benutzer behoben werden
+-- 11 - 18 -- komplexere Fehler die teilweise vom Benutzer behoben werden koennen
+-- 19 - 25 -- schwerwiegende Fehler des Systems, koennen nur von sysadmins angeben 
+		   -- werden und muessen ins Ereignisprotokoll von Windows geschrieben werden
+--		   -- Schweregrad 20 - 25 trennt den Client vom Server
+
+-- Meldung ertellen
+
+exec sp_addmessage 600000, 10,'Cant deleted!','us_english', 'false';
+exec sp_addmessage 600000, 10,'Kann nicht geloescht werden!','german', 'false';
+
+-- Meldung verwenden
+
+raiserror(600000,10,1);				-- Meldung
+raiserror(600000,13,1);				-- Fehler 600000
+raiserror(600000,21,1) with log;	-- schwerer Fehler
+
+-- sie koennen Raiseerrror mit jedem Schweregrad ins Ereignisprotokoll
+-- eintragen lassen;
+
+raiserror(600000,13,1) with log;	-- Fehler 600000 im Ereignisprotokoll
+
+-- AdHoc - Meldungen
+
+raiserror('Heute ist Donnerstag.',10,1);
+
+use standard 
+go
+
+-- Variable
+-- der Inhalt einer Variablen steht nur innerhalb der Stapel zur Verfuegung
+-- in dem die Variable deklariert wurde
+
+-- Deklaration
+
+declare @ort varchar(50), @farbe varchar(10), @nummer char(3)
+declare @kuchen xml;
+declare @erg table(nummer char(3),
+				   namen varchar(50),
+				   lagermenge int);
+
+-- Wertzuweissung
+
+-- 1. Werte fuer skalare Variablen 
+
+set @ort = 'Hamburg';
+set @farbe = 'rot';
+set @nummer = 'A03';
+
+-- 2. Werte durch Abfrage
+
+select @ort = astadt, @farbe = farbe from artikel where anr = @nummer;
+
+set @kuchen = '<rezept>			
+				<mehl>500</mehl>	
+				<eier>4</eier>
+				<zucker>200</zucker>
+				</rezept>';
+
+insert into @erg select anr, aname, amenge from artikel where astadt = @ort;
+
+-- Variableninhalt anzeigen lassen
+
+select @ort as [Ortsvariable], @farbe as [Farbe], @nummer as [Artikelname];
+
+-- zu 2tens 
+
+print 'Der Artikel' + ' (' + @nummer + ') ist ' + @farbe + ' und lagert in ' + @ort;
+
+-- xml
+
+select @kuchen;
+
+-- Tabellenvariable
+
+select * from @erg;
+go
+
+use standard
+go
+
+-- Sprachkonstukte
+
+-- IF/ELSE
+
+declare @tab sysname = 'zitrone'
+if not exists(select * from sys.tables where object_id = object_id(@tab))
+begin	
+	raiserror('Die Tabelle gibt es nicht.',10,1,@tab);
+	return;
+end
+go
+
+----
+
+declare @datum datetime = '11.06.2022';
+if @datum >= dateadd(dd, -7, getdate())
+begin
+	raiserror('Datum ist im Bereich.',10,1);
+end;
+else
+begin
+	raiserror('Datum ist zu gross.',10,1);
+end;
+go
+
+-- neu im Angebot
+
+drop table if exists zitrone;
+
+--Schleifen
+
+declare @x int = 1;
+while @x <=10
+begin
+	print cast(@x as varchar(10)) + '.Durchfall.';
+	set @x +=1;
+end;
+
+
+-- Try -- CATCH
+
+begin try
+	begin 
+		select 1/0;
+	end
+end try
+begin catch
+	begin
+		select ERROR_NUMBER() as [Fehlernummer],
+			   ERROR_MESSAGE() as [Fehlertext],
+			   ERROR_SEVERITY() as [Schweregrad];
+	end
+end catch
+go
+
+--und
+
+begin try
+	begin
+		begin transaction erdbeere
+		update lieferant set lstadt = 'Erfurt';
+		select 1/0;
+		commit transaction erdberee
+	end
+end try
+begin catch
+	begin
+		rollback transaction erdbeere
+		select ERROR_NUMBER() as [Fehlernummer],
+			   ERROR_MESSAGE() as [Fehlertext],
+			   ERROR_SEVERITY() as [Schwerergrad]
+		end
+end catch;
+go
+
+----
+
+use standard
+go
+
+-- Dynamische SQL Anweissungen
+
+declare @tab sysname, @nr char(3), @spalte1 sysname, @spalte2 sysname
+set @nr = 'A03';
+set @tab = 'artikel';
+set @spalte1 = 'aname';
+set @spalte2 = 'astadt';
+
+-- select @spalte1, @spalte2 from @tab where anr = @nr;
+
+-- in der FROM - Klausel darf nur ein Tabellenname oder eine Tabellenvariable stehen
+-- der Abfrageoptimierer stellt fest das eine Variable in der FROM - Klausel steht,
+-- sie aber nicht als Variable deklariert wurde.
+
+-- wir benoetigen eine dynamische SQL Anweisung. diese wird erst zur Laufzeit 
+-- aufgebaut und mit execute ausgefuehrt.
+
+-- den Abfragestring koennen sie einer VAriablen uebergeben oder direkt
+-- im EXECUTE definieren
+
+-- exec('select' + @spalte1 + ',' +@spalte2 + 'from' + @tab + 'where anr =' + @nr);
+
+--declare @sql varchar(max)
+--set @sql = 'select' + @spalte1 + ', ' + @spalte2 + 'from' + @tab + 'where anr = ' + @nr;
+--select @sql;
+
+
+declare @tab sysname, @nr char(3), @spalte1 sysname, @spalte2 sysname
+set @nr = 'A03';
+set @tab = 'artikel';
+set @spalte1 = 'aname';
+set @spalte2 = 'astadt';
+declare @sql varchar(max), @hk char(1) = char(39);
+set @sql = 'select ' + @spalte1 + ', ' + @spalte2 + ' from ' + @tab + ' where anr = ' + @hk + @nr + @hk;
+exec(@sql);
+go
+
+
