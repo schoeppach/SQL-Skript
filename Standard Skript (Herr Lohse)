@@ -406,7 +406,13 @@ where gewicht > 15 and astadt like '[E-L]%'or amenge > 700;
 select * from artikel
 where gewicht > 15 and(astadt like '[E-L]%'or amenge > 700);
 
+Uebung 1:
+
 1.
+
+-- schreiben die 3 Abfragen 
+-- (Vergleichsoperatoren und Schluesselwoerter "between" und "in")
+-- die alle Lieferungen vom 5. bzw 6. August 1990 ausgeben
 
 select *
 from lieferung
@@ -422,11 +428,19 @@ where ldatum >= '05.08.1990' and ldatum <= '06.08.1990';
 
 2.
 
+-- sschreiben sie eine Abfrage, die die Nummern und Namen aller roten
+-- oder blauen Artikel aus Hamburg ausgibt sowie die Artikel die eine 
+-- Lagermenge zwischen 900 und 1500 Stueck haben und in deren 
+-- Name ein "a" vorkommt
+
 select  anr, aname from artikel
 where Farbe in('rot','blau') and astadt ='Hamburg' or 
 amenge between 900 and 1500 and aname like '%a%';
 
 3.
+
+-- schreiben sie eine Abfrage, die alle Lieferanten ausgibt, deren 
+-- Namen mit einem Buchstaben zwischen A und G beginnt
 
 select * from lieferant
 where lname between 'A' and 'G';
@@ -436,7 +450,10 @@ where lname like '[a-g]%';
 
 4.
 
--- Lieferanten mit BCS am Anfang und an 3. Stelle ein a
+-- schreiben sie eine Abfrage, die alle Lieferanten ausgibt, deren Namen
+-- mit "S", "C" oder "B" beginnen und wo der dritte Buchstabe im Namen
+-- ein "a" ist, die aber in einem Ort wohnen in dessen
+-- Namen die Zeichenfolge "ried" nicht vorkommt
 
 select * from lieferant
 where lname like '[BCS]_a%_' and lstadt not like 'ried%';
@@ -447,6 +464,10 @@ insert into lieferant values('L20', 'Braun', 5, 'Riednordhausen');
 go
 
 5.
+
+-- schreiben sie eine Abfrage zur Ausgabe aller Artikel
+-- es sollen jedoch nur die Artikel ausgegeben werden, deren Gewicht 
+-- null Gramm betraegt oder unbekannt ist
 
 select * from artikel
 where gewicht = 0 or gewicht is null;
@@ -728,7 +749,7 @@ select lnr, anr, cast(ldatum as char(10)) from Lieferung
 
 select lnr, anr, convert(char(10),ldatum,104) from Lieferung;
 
--	Uebung 3
+Uebung 2:
 
 1.
 
@@ -888,7 +909,8 @@ group by lstadt
 having avg(status) > 15;                            -- RICHTIG
 
 
---Uebung:
+Uebung 3:
+
 1.
 
 -- schreiben sie eine Abfrage, die alle im August durchgefuehrten 
@@ -1235,7 +1257,7 @@ and lnr in (select lnr
 
 TAG 5:
 
--- Uebungen
+Uebung 4:
 
 /*
 Alle Angaben zu den Liefranten deren Statuswert ueber dem durchschnittlichen
@@ -1605,7 +1627,7 @@ where b.lnr is null;
 
  TAG 7:
 
- Übung 3
+ Übung 5:
 
  1. 
 
@@ -2330,9 +2352,6 @@ where a.lnr = 'L06';		-- dem  liefranten wurde die LNR
 							-- ihm wieder zugeordnet
 
 
-
-
-
 exec sp_help 'lieferant'
 select * from lieferant
 delete lieferant
@@ -2470,7 +2489,7 @@ exec sp_help lieferant;
 
 TAG 13:
 
-Übung 4
+Übung 6
  
 use master
 go
@@ -3197,7 +3216,7 @@ deallocate filegroesse;
 go
 
 -----
-Uebung 5
+Uebung 7
 
 /*
 Schreiben sie ein Skript welches ihnen fuer jede Tabelle
@@ -3256,7 +3275,7 @@ ORDER BY o.name
 
 ------
 
-Uebung 6:
+Uebung 8:
 
 declare @tabname sysname = 'artikel', @indname varchar(100) = 'anr_pk';
 
