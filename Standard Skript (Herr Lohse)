@@ -891,6 +891,9 @@ having avg(status) > 15;                            -- RICHTIG
 --Uebung:
 1.
 
+-- schreiben sie eine Abfrage, die alle im August durchgefuehrten 
+-- Lieferungen zaehlt
+
 select count(lnr) as [Anzahl der Lieferungen]
 from lieferung
 where datepart(mm,ldatum) = 8
@@ -901,9 +904,15 @@ from lieferung
 
 2.
 
+-- schreiben sie eine Abfrage, welche die Anzahl aller Nicht-Nullwerte 
+-- des Feldes "lstadt" in der Lieferantentabelle ermittelt
+
 select count(lstadt) from lieferant;
 
 3.
+
+-- schreiben sie eine Abfrage, die die jeweils kleinste Lieferung eines
+-- jeden Lieferanten anzeigt
 
 select lnr, min(lmenge) 
 as [kleinste Liefermenge] 
@@ -911,6 +920,9 @@ from lieferung
 group by lnr                    
 
 4.
+
+-- schreiben sie eine Abfrage, die den ersten Lieferanten ermittelt, dessen
+-- Name mit "S" beginnt (in alphabetischer Reihenfolge)
 
 select * from lieferant
 where lname like '[s]%'
@@ -924,6 +936,9 @@ where lname like 's%';
 
 5.
 
+-- schreiben sie eine Abfrage, mit der sie den hoechsten Lagerbestand von
+-- Artikeln am jeweiligen Lagerort ermitteln koennen
+
 select astadt, max(amenge)
 from artikel
 group by astadt;
@@ -933,12 +948,16 @@ select * from artikel
 
 6.
 
+-- wie viele unterschiedliche Artikel wurden von jedem Lieferanten geliefert
+
 select lnr, 
 count (distinct anr)
 from Lieferung
 group by lnr;
 
 7.
+
+-- gesucht sind die Artikelnummern die weniger als dreimal geliefert wurden
 
 select anr
 from lieferung
@@ -947,6 +966,9 @@ having count (anr) < 3
 
 8.
 
+-- gesucht sind die Lieferantennummern und die Gesamtliefermenge der Lieferanten
+-- die seit dem 13.07.1990 eine Gesamtliefermenge von mehr als 600 Stueck hatten
+
 select lnr, sum (lmenge)
 from lieferung
 where ldatum >= '13.07.1990'
@@ -954,6 +976,11 @@ group by lnr
 having sum (lmenge) > 600
 
 9.
+
+-- gesucht ist der in den jeweiligen Wohnorten der Lieferanten kleinste und groesste
+-- Statuswert, fuer alle die Lieferanten mit einer Lieferantennummer zwischen
+-- "L01" und "L99" wenn der kleinste Statuswert der jeweiligen Stadt 10 uebersteigt
+-- und der groesste Statuswert der jeweiligen Stadt 50 nicht uebersteigt
 
 select min(status), max(status), lstadt
 from lieferant
@@ -1208,7 +1235,7 @@ and lnr in (select lnr
 
 TAG 5:
 
---Uebungen
+-- Uebungen
 
 /*
 Alle Angaben zu den Liefranten deren Statuswert ueber dem durchschnittlichen
@@ -1932,7 +1959,7 @@ values('L24','Boomer',5,'Weimar')
 
 select * from spion
 
--- Aendern der Daten
+-- aendern der Daten
 
 -- Daten werden geaendert mit der UPDATE Anweisung
 -- es ein oder mehrere Spaltenwerte einer oder mehrerer Datensaetze
@@ -1971,7 +1998,7 @@ output 2, getdate(), suser_name(), 'Update',
 into spion
 where lnr = 'L23';
 
---pruefen mit
+-- pruefen mit
 
 select * from spion
 
@@ -1984,7 +2011,7 @@ output 3, getdate(), suser_name(), 'Update',
 into spion
 where lnr = 'L23';
 
---DELETE
+-- DELETE
 
 -- loescht einen oder mehrere Datensaetze
 -- sollte nicht ohne where Klausel verwendet werden
@@ -2062,7 +2089,7 @@ go
 -- Transaktion ist eine unteilbaareEinheit die entweder ganz oder
 -- ganz garnicht ausgeführt wird
 
---beispiel: dre Herr Beinlich hat für den Herrn Donath
+-- Beispiel: dre Herr Beinlich hat für den Herrn Donath
 --				ein Programm geschrieben für das Homebanking
 --				Herr Donath will 5000 Euro von seinem Girokonto
 --				auf sein Sparkonto ueberweisen
@@ -3064,7 +3091,7 @@ begin try
 		begin transaction erdbeere
 		update lieferant set lstadt = 'Erfurt';
 		select 1/0;
-		commit transaction erdberee
+		commit transaction erdbeere
 	end
 end try
 begin catch
