@@ -2550,7 +2550,7 @@ where b.lnr is null;
 
 select * from Hamb_lief;
 
-----------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 TAG 15:
 
@@ -2902,14 +2902,14 @@ set @spalte2 = 'astadt';
 -- wir benoetigen eine dynamische SQL Anweisung. diese wird erst zur Laufzeit 
 -- aufgebaut und mit execute ausgefuehrt.
 
--- den Abfragestring koennen sie einer VAriablen uebergeben oder direkt
+-- den Abfragestring koennen sie einer Variablen uebergeben oder direkt
 -- im EXECUTE definieren
 
 -- exec('select' + @spalte1 + ',' +@spalte2 + 'from' + @tab + 'where anr =' + @nr);
 
---declare @sql varchar(max)
---set @sql = 'select' + @spalte1 + ', ' + @spalte2 + 'from' + @tab + 'where anr = ' + @nr;
---select @sql;
+-- declare @sql varchar(max)
+-- set @sql = 'select' + @spalte1 + ', ' + @spalte2 + 'from' + @tab + 'where anr = ' + @nr;
+-- select @sql;
 
 
 declare @tab sysname, @nr char(3), @spalte1 sysname, @spalte2 sysname
@@ -2918,8 +2918,177 @@ set @tab = 'artikel';
 set @spalte1 = 'aname';
 set @spalte2 = 'astadt';
 declare @sql varchar(max), @hk char(1) = char(39);
-set @sql = 'select ' + @spalte1 + ', ' + @spalte2 + ' from ' + @tab + ' where anr = ' + @hk + @nr + @hk;
+set @sql = 'select ' + @spalte1 + ', ' + @spalte2 + 
+		   ' from ' + @tab + ' where anr = ' + @hk + @nr + @hk;
 exec(@sql);
 go
+
+----------------------------------------------------------------------------------
+
+TAG 16
+
+use standard
+go
+
+-- alter database standard modify file (name = standard,
+									 -- maxsize =20 GB);
+-- go
+
+-- alter database standard modify file (name = standard_log,
+									 -- maxsize =10 GB);
+-- go
+
+if db_name() in('master','tembdb','msdb','model')
+begin
+	raiserror('Sie befinden sich in einer Systemdatenbank.',10,1);
+	return;
+end;
+
+declare @realsize bigint = 0, @maxsize bigint = 0, @name varchar(2000);
+
+declare filegroesse cursor for
+select name, size, max_size from sys.database_files;
+
+--alles zusammmen auswaehlen
+
+open filegroesse;
+
+fetch from filegroesse into @name, @realsize, @maxsize;
+while @@fetch_status = 0
+begin
+	if((@realsize * 8196 / 1024) * 100 / (@maxsize * 8196 / 1024)) >= 20 
+		begin
+		dbcc shrinkfile(@name) with no_infomsgs;
+			if((@realsize * 8196 / 1024) * 100 / (@maxsize * 8196 / 1024)) >= 20 
+			  raiserror('Die Datei %s konnte nicht verkleinert werden.',10,1,@name);
+			else
+			  raiserror('Die Datei %s wurde verkleinert.',10,1,@name);
+		end
+	else
+		 raiserror('Die Datei %s musste nicht verkleinert werden.',10,1,@name);
+
+	fetch from filegroesse into @name, @realsize, @maxsize;
+end;
+deallocate filegroesse;
+go
+
+-----
+Uebung 5
+
+/*
+Schreiben sie ein Skript welches ihnen fuer jede Tabelle
+der aktuellen Datenbank den Tabellennamen und die Anzahl der
+Datensaetze dieser Tabelle in einem Tabellenergebnis, mit den
+Spalten "Tabellenname" und "Anzahl Datensaetze" ausgibt
+*/
+
+declare @ausgabe table(Tabellenname varchar(200), Anzahl_Datensätze int);
+declare @anz table (anzahl int);
+declare @tabelle sysname, @sql varchar(max);
+
+declare tab_such cursor for 
+select b.name + '.' + a.name 
+from sys.tables as a join sys.schemas as b
+on a.schema_id = b.schema_id
+where a.name not like 'sys%';
+
+open tab_such;
+fetch tab_such into @tabelle;
+
+while @@fetch_status = 0
+begin
+	delete @anz;
+	set @sql = 'select count(*) from '+  @tabelle;
+	insert into @anz exec(@sql);
+	insert into @ausgabe values (@tabelle, (select anzahl from @anz)); 
+	fetch tab_such into @tabelle;
+end;
+select * from @ausgabe;
+deallocate tab_such;
+go
+
+-- funktioniert aber Herr Lohse war nicht begeistert
+
+SELECT o.name, i.rowcnt
+FROM sysindexes AS i
+INNER JOIN sysobjects AS o
+ON  i.id = o.id
+WHERE i.indid < 2
+AND OBJECTPROPERTY(o.id, 'IsMSShipped') = 0
+ORDER BY o.name
+
+-- oder so, aber Herr Lohse ist immer noch nicht begeistert
+
+SELECT o.name, ddps.row_count
+FROM sys.indexes AS i
+INNER JOIN sys.objects AS o
+ON i.OBJECT_ID = o.OBJECT_ID
+INNER JOIN sys.dm_db_partition_stats AS ddps
+ON i.OBJECT_ID = ddps.OBJECT_ID
+AND i.index_id = ddps.index_id
+WHERE i.index_id < 2
+AND o.is_ms_shipped = 0
+ORDER BY o.name
+
+------
+
+Uebung 6:
+
+
+declare @tabname sysname = 'artikel', @indname varchar(100) = 'anr_ps';
+
+/*
+Schreiben Sie ein Skript welches für die oben angegebene Tabelle und den
+angegebenen Indexname den Fragmentierungsgrad des Index ermittelt.
+Ist der Fragmentierungsgrad unter 7 % soll nichts passieren. Ist der 
+Fragmentierungsgrad zwischen 8 und 30 % soll der Index reorganisiert
+werden, ist der Fragmentierungsgrad über 30 % soll der Index neu
+gebildet werden.
+*/
+
+declare @tabvoll sysname, @indid int;
+
+select @tabvoll = a.name + '.' + b.name 
+from sys.schemas as a join sys.tables as b 
+on a.schema_id = b.schema_id 
+where b.name = @tabname and b.name  not like 'sys%';
+
+if not exists(select * from sys.objects where object_id = object_id(@tabname))
+  begin
+	raiserror('Die Tabelle %s gibt es nicht in der Datenbank.',10,1,@tabname);
+	return;
+  end;
+else if not exists (select * from sys.indexes where name = @indname)
+	  begin
+		raiserror('Einen index mit dem Namen %s gibt es nicht.',10,1,@indname);
+		return;
+	  end;
+
+select @indid = index_id from sys.indexes where name = @indname;
+
+if (select avg_fragmentation_in_percent
+    from 
+	sys.dm_db_index_physical_stats(db_id(),object_id(@tabvoll),@indid, null,null)) < 7
+begin
+	raiserror('Index %s nicht fragmentiert.',10, 1, @indname);
+end;
+if (select avg_fragmentation_in_percent
+	from 
+	sys.dm_db_index_physical_stats(db_id(),object_id(@tabvoll),@indid, null,null)) between 8 and 30
+begin
+	execute ('alter index ' + @indname + ' on ' + @tabvoll + ' reorganize;');
+	raiserror('Index %s ist leicht fragmentiert. er wurde reorganisiert',10, 1, @indname);
+end;
+if (select avg_fragmentation_in_percent
+	from 
+	sys.dm_db_index_physical_stats(db_id(),object_id(@tabvoll),@indid, null,null)) > 30
+begin
+	execute ('alter index ' + @indname + ' on ' + @tabvoll + ' rebuild;');
+	raiserror('Index %s ist stark fragmentiert. er wurde neu gebildet',10, 1, @indname);
+end;
+go
+
+
+
 
 
