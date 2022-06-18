@@ -5,14 +5,14 @@
 use master
 go
 
---eventuell vorhandene datenbankspezifische benutzerdefinierte
+--eventuell vorhandene Datenbankspezifische benutzerdefinierte
 --Fehlermeldungen entfernen
 
 if exists(select * from sys.messages where message_id = 50100)
 	execute sp_dropmessage '50100', 'all';
 go
 
---eventuell vorhandene Datenbank "Standard" l�schen
+--eventuell vorhandene Datenbank "Standard" loeschen
 
 
 if exists(select * from sys.databases where database_id = db_id('Standard'))
@@ -178,7 +178,7 @@ go
 --aendern der Lagermenge wenn die Artikelnummer einer
 --Lieferung geaendert wird
 
---create trigger anummer_lief_�ndern
+--create trigger anummer_lief_aendern
 --on einkauf.lieferung
 --for update
 --as
@@ -224,8 +224,8 @@ from lieferant;
 select lnr, lname, status, lstadt
 from sql16serv1.standard.dbo.lieferant;
 
--- Aus der DB Standard heraus soll die Tabelle person in person der DB
--- AdventureWorks2012 abgefragt werden. DAbei soll Datenbankkontex des
+-- Aus der DB Standard heraus soll die Tabelle Person in Person der DB
+-- AdventureWorks2012 abgefragt werden. Dabei soll Datenbankkontex des
 -- aufrufenden Stapels nicht geaendert (use...) werden.
 
 select *
@@ -372,7 +372,7 @@ where lname not like '%a%';
 select * from lieferant
 where lname like '%%%';                 --- ???????????
 
--- Da % ein Platzhalter ist , muss man mit einer Maske arbeiten.
+-- Da % ein Platzhalter ist, muss man mit einer Maske arbeiten.
 
 select * from lieferant
 where lname like '%y%%' escape 'y';
@@ -428,7 +428,7 @@ where ldatum >= '05.08.1990' and ldatum <= '06.08.1990';
 
 2.
 
--- sschreiben sie eine Abfrage, die die Nummern und Namen aller roten
+-- schreiben sie eine Abfrage, die die Nummern und Namen aller roten
 -- oder blauen Artikel aus Hamburg ausgibt sowie die Artikel die eine 
 -- Lagermenge zwischen 900 und 1500 Stueck haben und in deren 
 -- Name ein "a" vorkommt
@@ -663,7 +663,7 @@ from lieferant
 select lnr
 from lieferant;
 
---numerischen Teil und alfanumerischen Teil trenen
+--numerischen Teil und alfanumerischen Teil trennen
 
 select substring(lnr,2,2)
 from lieferant
@@ -793,7 +793,7 @@ go
 
 -- das Ergebnis ist genau ein Wert
 
--- all Aggregatfunktionen ignorieren NULL-Marken
+-- alle Aggregatfunktionen ignorieren NULL-Marken
 
 -- die fuenf am haufigsten gebrauchten Aggregatfunktionen sind
 
@@ -818,7 +818,7 @@ select max(lmenge) from lieferung;
 
 select max(lmenge),lnr from lieferung;   -- Fehler
 
--- Alle Spalten ein der Select-Liste die kein Argument einer Aggregatfunktion
+-- Alle Spalten in der Select-Liste die kein Argument einer Aggregatfunktion
 -- sind muessen in einer group by Klausel stehen
 
 select max(lmenge),lnr from lieferung
@@ -1023,7 +1023,7 @@ select *
 from lieferung
 
 -- CUBE und ROLLUP
--- ermoeglichen zusammen mit Aggregatfunktionen erweiterte      Zusammenfassungswerte
+-- ermoeglichen zusammen mit Aggregatfunktionen erweiterte Zusammenfassungswerte
 -- die Funktionen werden in der group by-Klausel verwendet
 
 -- die Lieferantennummer, der Monat der Lieferung , das Jahr der Lieferung und
@@ -1039,7 +1039,7 @@ group by lnr, datename(mm,ldatum), datepart(yyyy,ldatum);
 -- Da wir ein sehr grosses Gruppenbildungsmerkmal verwenden muessen
 -- Ergebniss wenig aussagekraeftig
 --          eine Gesamtliefermenge ueber alle Lieferungen
---          eine Gesamtliefermenge furr jeden Lieferanten
+--          eine Gesamtliefermenge fuer jeden Lieferanten
 --          eine Gesamtliefermenge fuer jeden Lieferanten im jeweiligen Monat
 --          eine Gesamtliefermenge fuer jeden Lieferanten im jeweiligen Monat und Jahr
 
@@ -1074,7 +1074,7 @@ select * from lieferung
 
 -- RANK 
 
--- Rangelolge der Lieferanten anhand ihrer Gesamtlieferungen
+-- Rangfolge der Lieferanten anhand ihrer Gesamtlieferungen
 
 select lnr, rank() over(order by sum(lmenge) desc) as [Rang], sum(lmenge)
         as [Gesamtliefermenge]
@@ -1094,7 +1094,7 @@ group by lnr;
 
 -- Zeilennummern mit ROW_NUMBER
 
--- Alle Angaben zu den Liefranten zuzueglich einer laufenden Nummer
+-- Alle Angaben zu den Lieferanten zuzueglich einer laufenden Nummer
 
 select row_number() over(order by lnr asc) as [laufende Nummer],
         lnr, lname, lstadt
@@ -1102,13 +1102,13 @@ from lieferant;
 
 -- das Ergebnis einer Abfage in eine Datenbanktabelle speichern
 -- er kann gespeichert werden in eine neue permanenten Tabelle
--- oder in tempoeaeren Tabellen
+-- oder in temporaeren Tabellen
 -- temporaere Tabellen koennen lokal oder gobal sein
 -- temporaere Tabellen koennen von jedem Datenbanbenutzer erstellt werden
 -- sie existieren solange wie die Sitzung die sie erstellt hat existiert
 
 -- permanente Tabellen koennen nur von Benutzern mit der Berechtigung
--- create table.. und der alter schema.. Bereschtigung fuer das Schema
+-- create table.. und der alter schema.. Berechtigung fuer das Schema
 -- wo die Tabelle erstellt wird, erstellt werden.
 
 -- 1. permanente Tabelle
@@ -1166,7 +1166,7 @@ go
 -- Mengenoperatoren aus der Mengenmathematik
 
 -- Adition
--- Minus
+-- Subtraktion
 -- Schnittmenge
 
 -- Union M1 + M2 = M2/M2
@@ -1188,7 +1188,7 @@ union
 select astadt from artikel
 order by lstadt desc;
 
--- Union eleminiert doppelte Datensaetze im Ergbnis (wie distinct)
+-- Union eleminiert doppelte Datensaetze im Ergebnis (wie distinct)
 -- das kann ich ausschalten
 
 select lstadt as [Wohn-und Lagerorte] from lieferant
@@ -1260,9 +1260,9 @@ TAG 5:
 Uebung 4:
 
 /*
-Alle Angaben zu den Liefranten deren Statuswert ueber dem durchschnittlichen
+Alle Angaben zu den Lieferanten deren Statuswert ueber dem durchschnittlichen
 Statuswert der Lieferanten liegt, die in der gleichen Stadt wohnen
-wie Liefrant L02.
+wie Lieferant L02.
 */
 
 select lstadt
@@ -1402,7 +1402,7 @@ from Artikel;
 -- oder in einen Join umgewandelt werden.
 
 -- im Gegensatz zu einfachen Unterabfragen beginnt eine korrelierte
--- Unterabfrage mit der ausseren Abfrage
+-- Unterabfrage mit der auesseren Abfrage
 
 -- Lieferanenten die mindestens dreimal geliefert haben
 
@@ -1421,7 +1421,7 @@ where 3 <= (select count(lnr)
 
 -- delete lieferung where datepart(yyyy,ldatum) > 1990;
 
--- Alle Angaben zu Lieferantendie geliefert haben
+-- Alle Angaben zu Lieferanten die geliefert haben
 
 select *
 from lieferant as a
@@ -1561,7 +1561,7 @@ select distinct a.lnr, lname
 from lieferant as a join 
 lieferung as b on a.lnr <> b.lnr;           -- falsches Ergebnis
 
--- bei naeherer Betrachtung enthaelt das ERgebnis 48 DS, 60 DS des
+-- bei naeherer Betrachtung enthaelt das Ergebnis 48 DS, 60 DS des
 -- kartesischen Produktes minus 12 DS die logisch zusammen gehoeren
 
 select * 
@@ -1977,14 +1977,14 @@ output 1,getdate(),suser_name(),'Insert', inserted.lnr, inserted.lnr, null
        into spion
 values('L24','Boomer',5,'Weimar')
 
---pruefen mit
+-- pruefen mit
 
 select * from spion
 
 -- aendern der Daten
 
--- Daten werden geaendert mit der UPDATE Anweisung
--- es ein oder mehrere Spaltenwerte einer oder mehrerer Datensaetze
+-- Daten werden geaendert mit der UPDATE Anweisung wenn
+-- ein oder mehrere Spaltenwerte einer oder mehrerer Datensaetze
 -- geaendert werden
 
 -- eine Update - Anweisung ohne where Klausel macht keinen Sinn
@@ -2071,7 +2071,7 @@ Tag 9:
 -- es gibt Einschränkungen in der Groesse
 -- der Datenbanbkdateien und es gibt
 -- keine Moeglichkeit der hohen Verfügbarkeit, der
--- Automatisierung un der Ueberwachung
+-- Automatisierung und der Ueberwachung
 
 -- die Evaluierungsversion entspricht der Enterprise Edition
 -- alle Funktionen sind verfügbar
@@ -2086,8 +2086,8 @@ Tag 9:
 
 -- SQL Server unterstuetzt RAID 1, RAID 5, RAID 10
 
--- arbeiten mit dezitierten Platten --> Datendateien und
--- protokolldateien niemals auf ein Device
+-- arbeiten mit dezidierten Platten --> Datendateien und
+-- Protokolldateien niemals auf ein Device
 
 -- die Dienstkonten sollten nicht die lokalen (vorinstallierten) sein
 -- auch wenn der SQL Server auf einem lokalen (ohne Domäne) Rechner installiert wird 
@@ -2096,7 +2096,7 @@ Tag 9:
 -- installieren sie nur die Dienste die sie umbedingt benoetigen
 
 -- wir wollen den SQL Server 2016 Enterprise Edition ohne grafische Oberflaeche installieren
--- es sit jeweils ein Device fuer die Datenbankdateien und die Datenbankprotokolldateien
+-- es ist jeweils ein Device fuer die Datenbankdateien und die Datenbankprotokolldateien
 -- vorhanden, das gleiche gilt fuer die TEMPDB
 
 use master
@@ -2108,10 +2108,10 @@ go
 -- Systemdatenbanken (master, msdb, tempdb, model, distribution)
 
 
--- Transaktion ist eine unteilbaareEinheit die entweder ganz oder
+-- Transaktion ist eine unteilbare Einheit die entweder ganz oder
 -- ganz garnicht ausgeführt wird
 
--- Beispiel: dre Herr Beinlich hat für den Herrn Donath
+-- Beispiel: der Herr Beinlich hat für den Herrn Donath
 --				ein Programm geschrieben für das Homebanking
 --				Herr Donath will 5000 Euro von seinem Girokonto
 --				auf sein Sparkonto ueberweisen
@@ -2187,7 +2187,7 @@ insert into dbo.lieferung values('L04', 'A02', 200, '09.08.90');
 insert into dbo.lieferung values('L04', 'A04', 300, '20.08.90');
 insert into dbo.lieferung values('L04', 'A05', 400, '21.08.90');
 
---prüfen mit
+--pruefen mit
 
 select * from lieferant
 select * from lieferung
@@ -2196,7 +2196,7 @@ select * from artikel
 -----------------------------------------------------------------------
 
 -- Einschränkungen für Tabellen erstellen
--- Primary key, unique, foreign key, default, check
+-- primary key, unique, foreign key, default, check
 -- sie dienen dazu Integritätsbedingungen innerhalb der
 -- Datenbank durchzusetzen
 -- diese Einschränkungen koennen für Tabellen mit und ohne DS erstellt
@@ -2210,7 +2210,7 @@ select * from artikel
 
 alter table lieferant add constraint lnr_pk primary key(lnr);
  
--- prüfen mit
+-- pruefen mit
 
 exec sp_help 'lieferant'
 
@@ -2222,7 +2222,7 @@ exec sp_help 'lieferant'
 insert into lieferant values('L01','Kummer',5,'Erfurt'); -- L01 vorhanden
 insert into lieferant values('L06','Kummer',5,'Erfurt',0); -- geht
 
--- Unique (vorbereitung)
+-- Unique (Vorbereitung)
 
 alter table lieferant add vers_nr varchar(20) null;
 
@@ -2235,7 +2235,7 @@ update lieferant set vers_nr = 'MNO-12345-CC' where lnr = 'L06';
 
 alter table lieferant add consraint versnr_unq unique(vers_nr)
 
---Test 
+-- Test 
 
 insert into lieferant values ('L07','Jach',5,'Erfurt','ABC-12345-CC') -- Fehler
 insert into lieferant values ('L07','Jach',5,'Erfurt','QRS-12345-CC'); -- geht
@@ -2256,7 +2256,7 @@ alter table lieferant drop constraint versnr_unq;
 alter table lieferant drop drop column vers_nr;
 
 -- Default
--- wenn fuer eine Spalte kein Wert angeben wird soll ein DEfaultwert gelten.
+-- wenn fuer eine Spalte kein Wert angegeben wird soll ein Defaultwert gelten.
 -- auf Primaerschluesselspalten werden keine Default erstellt
 
 alter table lieferant add constraint lstadt_def default 'Gotha' for lstadt;
@@ -2279,12 +2279,12 @@ insert into lieferant values ('L09','Warnecke',5, null);
 
 -- mit dieser Einschraenkung kenne gültige Werte fuer eine Tabellenspalte 
 -- festgelegt werden
--- pro Spalte kann es keine, eine oder mehrere Check EInschraenkungen geben
---			-sie sollten sich nicht gegenseitig blockieren oder aufheben
+-- pro Spalte kann es keine, eine oder mehrere Check Einschraenkungen geben
+--		      sie sollten sich nicht gegenseitig blockieren oder aufheben
 -- Check Einschraenkungen koennen sich auch auf andere Spalten der Tabelle 
 -- beziehen Beispiel: im Datensatz befindet sich ein Wert 'Name' und 'Vorname'
---		es soll sichergestellt werden, dass wenn nur der Vorname angegeben
---		wurde, das Einfuegen des DS abgewiesen wird
+--		      es soll sichergestellt werden, dass wenn nur der Vorname 
+--                    angegeben wurde, das Einfuegen des DS abgewiesen wird
 
 
 -- Lieferantennamen sollen mit einem Buchstaben beginnen
@@ -2311,32 +2311,36 @@ alter table lieferung add constraint lnr_fk foreign key(lnr)
 						  on update cascade;
 
 alter table lieferung add constraint anr_fk foreign key(anr) 
-						  references artikel(anr);  -- erzeugt einen Fehler weil
-													-- die Tabelle Artikel
-													-- noch keinen Primaerschluessel
-													-- besitzt
+						  references artikel(anr);  
+                                                 
+                                                  -- erzeugt einen Fehler weil
+						  -- die Tabelle Artikel
+						  -- noch keinen Primaerschluessel
+						  -- besitzt
 
 alter table artikel add constraint anr_pk primary key(anr);	
 
 
 alter table lieferung add constraint anr_fk foreign key(anr)
-					  references artikel(anr);			-- jetzt sollte es gehen
+					  references artikel(anr);	    
+                                          
+                                                  -- jetzt sollte es gehen
 
 
 -- Primaerschluessel fuer die Tabelle Lieferung
 
--- zusammengesetzter Primaeerschluessel aus dem Spalten lnr, anr, ldatum
+-- zusammengesetzter Primaerschluessel aus dem Spalten lnr, anr, ldatum
 
 alter table lieferung add constraint lief_pk primary key(lnr,anr,ldatum);
 
---  beispiel fuer referentielle integritaet ( hat was mit dem foreign key zu tun)
+--  Beispiel fuer referentielle Integritaet (hat was mit dem foreign key zu tun)
 
 insert into lieferung values('L44','A02',500, GETDATE());
 
---	Fehler wegen referentieller integritaet, den Lieferanten L44
+--	Fehler wegen referentieller Integritaet, den Lieferanten L44
 --	gibt es nicht !!!
 
--- Opertationregel kaskadierndes Ändern zwischen Lieferant und Lieferung
+-- Opertationregel kaskadierndes aendern zwischen Lieferant und Lieferung
 
 select * from lieferant as a join lieferung as b on a.lnr = b.lnr
 where a.lnr = 'L04';
@@ -2344,12 +2348,14 @@ where a.lnr = 'L04';
 update lieferant set lnr = 'L06' where lnr = 'L04';
 
 select * from lieferant as a join lieferung as b on a.lnr = b.lnr
-where a.lnr = 'L04';		--leer weil L04 nicht mehr vorhanden
+where a.lnr = 'L04';		
+                                -- leer weil L04 nicht mehr vorhanden
 
 select * from lieferant as a join lieferung as b on a.lnr = b.lnr
-where a.lnr = 'L06';		-- dem  liefranten wurde die LNR
-							-- geaendert und seine Lieferungen wurden
-							-- ihm wieder zugeordnet
+where a.lnr = 'L06';		
+                                -- dem Liefranten wurde die lnr
+				-- geaendert und seine Lieferungen wurden
+				-- ihm wieder zugeordnet
 
 
 exec sp_help 'lieferant'
@@ -2408,7 +2414,7 @@ add file (name = standard_index,
 			filegrowth = 1 GB) to filegroup indexe;
 
 -- Damit Datenbankbenutzer die berechtigt sind in der Datenbank
--- Tabellen, Sichten, Prozeduren oder Funktionen zu erstelln, diese nicht
+-- Tabellen, Sichten, Prozeduren oder Funktionen zu erstellen, diese nicht
 -- aus Versehen in der Dateigruppe PRIMARY erstellen, machen wir
 -- jetzt die Dateigruppe Passiv zur Default Dateigruppe
 
@@ -2419,7 +2425,7 @@ go
 -- Maxsize von der Datei in PRIMARY und des Transaktionsprotokol
 -- aendern
 
--- prüfen mit
+-- pruefen mit
 
 exec sp_helpdb standard;
 
@@ -2450,7 +2456,7 @@ alter table lieferung drop constraint lnr_fk;
 
 alter table lieferung drop constraint anr_fk;
 
--- 1. Tabelle lieferant
+-- 1. Tabelle Lieferant
 
 alter table lieferant drop constraint lnr_pk;
 go
@@ -2536,7 +2542,7 @@ ortsname nvarchar(100),
 constraint orte_unq unique(plz,ortsname));
 go
 
--- Stammdatens�tze Orte f�r die Abteilungen
+-- Stammdatensaetze Orte fuer die Abteilungen
 
 insert into orte values(1,'98527','Suhl');
 insert into orte values(2,'99082','Erfurt');
@@ -2634,21 +2640,21 @@ schneller zu machen
 
 -- Views (gespeicherte Abfragen)
 -- Vorteil die Abfrage wird bei der ersten Ausführung kompiliert
---		und der Ausführungspan in den Prozerdurcache gelegt.
---		jeder weiter Aufruf der Sicht verwendet den breeits kompilierten
---		Ausführungsplan
+--		und der Ausfuehrungsplan in den Prozerdurcache gelegt.
+--		jeder weiter Aufruf der Sicht verwendet den bereits kompilierten
+--		Ausfuehrungsplan
 
 -- eine Sicht ermöglicht eine horizontale und vertikale Partionierung von
 -- Tabelleninfos
--- Beispiel: Der Meister des Mesiterbereichs 2 soll nur die Mitarbeiter+
---		angeszeigt bekommen die in seinem Meisterbereich arbeiten (horizontal)
---		aber ohne die Spalte 'gehalt' (vertikal)
+-- Beispiel: Der Meister des Meisterbereichs 2 soll nur die Mitarbeiter
+--		angezeigt bekommen die in seinem Meisterbereich arbeiten (horizontal)
+--		aber ohne die Spalte 'Gehalt' (vertikal)
 
 -- Sichten werden mit create view .. erstellt, mit alter view ... geaendert
 -- und mit drop view .. geloescht
 
 -- die create view - Anweisung darf nicht mit anderen SQL Anweisungen in einem
--- Stapel stehen. mit 'go' seperieren
+-- Stapel stehen! mit 'go' seperieren
 
 create view hamb_lief
 as
@@ -2687,7 +2693,7 @@ go
 
 exec sp_helptext 'hamb_lief';
 
--- rückgaengig mit
+-- rueckgaengig mit
 
 alter view hamb_lief
 as
@@ -2709,8 +2715,8 @@ go
 , 
 -- Datenaenderung ueber Sichten (Insert, Update, Delete)
 
--- Dateneaenderungen auf Sichten die sich auf mehr als eine Tabelle beziehen
--- sind nicht moeglich oder nur mit INSTEAD -Trigger moeglich
+-- Datenaenderungen auf Sichten die sich auf mehr als eine Tabelle beziehen
+-- sind nicht moeglich oder nur mit INSTEAD - Trigger moeglich
 
 --Insert
 
@@ -2754,7 +2760,7 @@ select * from hamb_lief1;
 
 insert into hamb_lief1 values('L33','Maria','Hamburg');  -- geht nicht
 
-insert into hamb_lief1 values('L33','Maria');			 -- geht nicht
+insert into hamb_lief1 values('L33','Maria');		 -- geht nicht
 
 -- Update
 
@@ -2775,15 +2781,15 @@ was wurde in der Datenbank gemacht
 update lieferant
 set lname = 'Kaltduscher'
 where lnr = 'L32'				-- kommt von Update
-and lstadt = 'Hamburg';			-- kommt von der Sicht
+and lstadt = 'Hamburg';			        -- kommt von der Sicht
 */
 
 -- DELETE
 
--- niemals nicht ohne where - Klausel  
+-- niemals ohne where - Klausel  
 -- weil
--- delete hamb_lief;			-- loescht alle Hamburger
---								-- Lieferanten
+-- delete hamb_lief;			        -- loescht alle Hamburger
+--						-- Lieferanten
 
 delete hamb_lief
 from hamb_lief as a left join lieferung as b on a.lnr = b.lnr
@@ -2856,7 +2862,7 @@ select * from indtest where vname like '%3099%';
 -- sobald ein gruppierter Index erstellt wird, wird die physische Reihenfolge
 -- der Datensaetze entsprechend der indizierten Reihenfolge geaendert
 
--- Primaerschlüssel fuer die Tabelle indtest
+-- Primaerschluessel fuer die Tabelle Indtest
 
 alter table indtest add constraint id_pk primary key(id);
 
@@ -2889,13 +2895,13 @@ select aname, astadt, amenge
 from artikel
 where farbe = 'rot';
 
--- abgedeckter Index ( der Index deckt die Abfgrage vollstaendig ab)
+-- abgedeckter Index (der Index deckt die Abfgrage vollstaendig ab)
 
 create index farbe_art on artikel(farbe, aname, astadt, amenge);
 
 -- Index mit eingeschlossenen Spalten
 -- wird verwendet wenn die Anzahl der Spalten des zusammengesetzten Index
--- 16 Spalten überschreitet und/oder die Länge der Spaltenwerte groesser
+-- 16 Spalten überschreitet und/oder die Laenge der Spaltenwerte groesser
 -- 900 Byte ist.
 
 create index farbe_art_inc on artikel(farbe) include (aname, astadt, amenge);
@@ -2913,7 +2919,7 @@ select * from artikel
 -- Extras SQL Server Profiler 
 
 -- Indexfragmentierung
--- die Fragmenntierung von Indizes stellen Sie mit der dynamischen Verwaltungs-
+-- die Fragmentierung von Indizes stellen Sie mit der dynamischen Verwaltungs-
 -- funktion sys.de_db_indexphysical_stats() fest
 -- wichig dabei ist die Spalte avg_fragmentation_in_percent
 
@@ -2930,7 +2936,7 @@ alter index farbe_art_inc on artikel rebuild;
 use standard;
 go
 
--- Programmieren mit Tranact ´SQL
+-- Programmieren mit Tranact "SQL"
 
 -- Begriffe:
 -- Script -- ist eine Datei welche mit der Endung .sql abgespeichert wird
@@ -2941,7 +2947,7 @@ go
 
 -- Anweisungsbloecke
 -- werden verwendet in einer WHILE - Schleife, im IF und ELSE Zweig einer
--- IF/ELSE - ANweisung und im Body von benutzerdefinierten Funktionen
+-- IF/ELSE - Anweisung und im Body von benutzerdefinierten Funktionen
 
 begin
 	select @@version;
@@ -2966,12 +2972,12 @@ select * from sys.messages where language_id = 1031;
 
 
 -- benutzerdefinierte Meldungen beginnen bei der messages_id > 50000
--- Raiseerrrormeldungen besitzen einen Schweregrad
+-- Raiserrormeldungen besitzen einen Schweregrad
 --  1 - 10 -- einfache Fehler die vom Benutzer behoben werden
 -- 11 - 18 -- komplexere Fehler die teilweise vom Benutzer behoben werden koennen
--- 19 - 25 -- schwerwiegende Fehler des Systems, koennen nur von sysadmins angeben 
-		   -- werden und muessen ins Ereignisprotokoll von Windows geschrieben werden
---		   -- Schweregrad 20 - 25 trennt den Client vom Server
+-- 19 - 25 -- schwerwiegende Fehler des Systems, koennen nur von sysadmins behoben
+	   -- werden und muessen ins Ereignisprotokoll von Windows geschrieben werden
+-- 20 - 25 -- trennt den Client vom Server
 
 -- Meldung ertellen
 
@@ -2982,7 +2988,7 @@ exec sp_addmessage 600000, 10,'Kann nicht geloescht werden!','german', 'false';
 
 raiserror(600000,10,1);				-- Meldung
 raiserror(600000,13,1);				-- Fehler 600000
-raiserror(600000,21,1) with log;	-- schwerer Fehler
+raiserror(600000,21,1) with log;	        -- schwerer Fehler
 
 -- sie koennen Raiseerrror mit jedem Schweregrad ins Ereignisprotokoll
 -- eintragen lassen;
@@ -3077,7 +3083,7 @@ go
 
 drop table if exists zitrone;
 
---Schleifen
+-- Schleifen
 
 declare @x int = 1;
 while @x <=10
@@ -3103,7 +3109,7 @@ begin catch
 end catch
 go
 
---und
+-- und
 
 begin try
 	begin
@@ -3192,7 +3198,7 @@ declare @realsize bigint = 0, @maxsize bigint = 0, @name varchar(2000);
 declare filegroesse cursor for
 select name, size, max_size from sys.database_files;
 
---alles zusammmen auswaehlen
+-- alles zusammmen auswaehlen
 
 open filegroesse;
 
@@ -3224,6 +3230,8 @@ der aktuellen Datenbank den Tabellennamen und die Anzahl der
 Datensaetze dieser Tabelle in einem Tabellenergebnis, mit den
 Spalten "Tabellenname" und "Anzahl Datensaetze" ausgibt
 */
+
+-- bevorzugtes Ergebnis
 
 declare @ausgabe table(Tabellenname varchar(200), Anzahl_Datensätze int);
 declare @anz table (anzahl int);
@@ -3293,14 +3301,7 @@ go
 
 declare @tabname sysname = 'artikel', @indname varchar(100) = 'anr_ps';
 
-/*
-Schreiben Sie ein Skript welches für die oben angegebene Tabelle und den
-angegebenen Indexname den Fragmentierungsgrad des Index ermittelt.
-Ist der Fragmentierungsgrad unter 7 % soll nichts passieren. Ist der 
-Fragmentierungsgrad zwischen 8 und 30 % soll der Index reorganisiert
-werden, ist der Fragmentierungsgrad über 30 % soll der Index neu
-gebildet werden.
-*/
+-------
 
 declare @tabvoll sysname, @indid int;
 
