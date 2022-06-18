@@ -5,28 +5,28 @@
 use master
 go
 
---eventuell vorhandene Datenbankspezifische benutzerdefinierte
---Fehlermeldungen entfernen
+-- eventuell vorhandene Datenbankspezifische benutzerdefinierte
+-- Fehlermeldungen entfernen
 
 if exists(select * from sys.messages where message_id = 50100)
 	execute sp_dropmessage '50100', 'all';
 go
 
---eventuell vorhandene Datenbank "Standard" loeschen
+-- eventuell vorhandene Datenbank "Standard" loeschen
 
 
 if exists(select * from sys.databases where database_id = db_id('Standard'))
 	drop database Standard;
 go
 
---benutzerdefinierte Fehlermeldung erstellen
+-- benutzerdefinierte Fehlermeldung erstellen
 
 sp_addmessage 50100,16,'The delivery of supplier %s of %s, was deleted from the User %s on %s.', 'us_english', 'true';
 go
 sp_addmessage 50100,16,'Die Lieferung von Lieferant %1! vom %2!, wurde von User %3! am %4! geloescht', 'German', 'true';
 go
 
---neue Datenbank "Standard" erstellen
+-- neue Datenbank "Standard" erstellen
 
 create database standard;
 /*
@@ -45,16 +45,16 @@ use standard;
 go
 
 
- -- Schemas erstellen
+-- Schemas erstellen
  
- --create schema verwaltung authorization dbo;
- go
- --create schema einkauf authorization dbo;
- go
+-- create schema verwaltung authorization dbo;
+go
+-- create schema einkauf authorization dbo;
+go
  
 
 
---Tabellen erstellen
+-- Tabellen erstellen
 
 create table dbo.artikel
 	(
@@ -93,8 +93,8 @@ go
 use standard;
 go
 
---Tabellen mit Anfangsdaten f�llen
---Tabelle Lieferant
+-- Tabellen mit Anfangsdaten f�llen
+-- Tabelle Lieferant
 
 insert into dbo.lieferant values('L01', 'Schmidt', 20, 'Hamburg');
 insert into dbo.lieferant values('L02', 'Jonas', 10, 'Ludwigshafen');
@@ -103,7 +103,7 @@ insert into dbo.lieferant values('L04', 'Clark', 20, 'Hamburg');
 insert into dbo.lieferant values('L05', 'Adam', 30, 'Aachen');
 
 
---Tabelle Artikel
+-- Tabelle Artikel
 
 insert into dbo.artikel values('A01', 'Mutter', 'rot', 12, 'Hamburg', 800);
 insert into dbo.artikel values('A02', 'Bolzen', 'gr�n', 17, 'Ludwigshafen', 1200);
@@ -113,7 +113,7 @@ insert into dbo.artikel values('A05', 'Nockenwelle', 'blau', 12, 'Ludwigshafen',
 insert into dbo.artikel values('A06', 'Zahnrad', 'rot', 19, 'Hamburg', 500);
 
 
---Tabelle Lieferung
+-- Tabelle Lieferung
 
 insert into dbo.lieferung values('L01', 'A01', 300, '18.05.90');
 insert into dbo.lieferung values('L01', 'A02', 200, '13.07.90');
@@ -130,14 +130,14 @@ insert into dbo.lieferung values('L04', 'A05', 400, '21.08.90');
 go
 
 
---Sicherstellen von Geschaeftsregeln
---Addieren der Liefermenge zur entsprechenden Lagermenge bei neuer Lieferung
+-- Sicherstellen von Geschaeftsregeln
+-- Addieren der Liefermenge zur entsprechenden Lagermenge bei neuer Lieferung
 
---create trigger menge_lief_neu
---on einkauf.lieferung
---for insert
---as
---if (select inserted.lmenge from inserted ) > 0
+-- create trigger menge_lief_neu
+-- on einkauf.lieferung
+-- for insert
+-- as
+-- if (select inserted.lmenge from inserted ) > 0
 --	begin
 --	 update verwaltung.artikel
 --	 set amenge = amenge + inserted.lmenge
@@ -145,27 +145,27 @@ go
 --	end;
 go
 
---Subtrahieren der Liefermenge vom der entsprechenden Lagermenge
---beim Loeschen einer oder mehrerer Lieferungen
+-- Subtrahieren der Liefermenge vom der entsprechenden Lagermenge
+-- beim Loeschen einer oder mehrerer Lieferungen
 
---create trigger lief_l�sch
---on einkauf.lieferung
---for delete
---as
+-- create trigger lief_l�sch
+-- on einkauf.lieferung
+-- for delete
+-- as
 -- update verwaltung.artikel
 -- set amenge = amenge - deleted.lmenge
 -- from verwaltung.artikel join deleted on artikel.anr = deleted.anr;
 go
 
 
---aendern der Lagermenge des entsprechenden Artikels bei aenderung
---der Liefermenge einer vorhandenen Lieferung
+-- aendern der Lagermenge des entsprechenden Artikels bei aenderung
+-- der Liefermenge einer vorhandenen Lieferung
 
---create trigger menge_lief_aendern
---on einkauf.lieferung
---for update
---as
---if update(lmenge)
+-- create trigger menge_lief_aendern
+-- on einkauf.lieferung
+-- for update
+-- as
+-- if update(lmenge)
 --   begin
 --	update verwaltung.artikel
 --	set amenge = amenge + inserted.lmenge - deleted.lmenge
@@ -175,14 +175,14 @@ go
 go
 
 
---aendern der Lagermenge wenn die Artikelnummer einer
---Lieferung geaendert wird
+-- aendern der Lagermenge wenn die Artikelnummer einer
+-- Lieferung geaendert wird
 
---create trigger anummer_lief_aendern
---on einkauf.lieferung
---for update
---as
---if update(anr)
+-- create trigger anummer_lief_aendern
+-- on einkauf.lieferung
+-- for update
+-- as
+-- if update(anr)
 --   begin
 --	update verwaltung.artikel
 --	set amenge = amenge - deleted.lmenge
