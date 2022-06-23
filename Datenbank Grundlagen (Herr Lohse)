@@ -3346,6 +3346,865 @@ end;
 go
 
 
+Tag 17:
+
+
+use standard
+go
+
+-- Programieren von Scripten
+
+-- ein Script besitzt die Endung .sql es kann manuell ueber den SSMS oder ueber
+-- SQL CMD gestartet werden. Aussserdem kann ein Script in Auftraege des Betriebssystem
+-- eingebunden werden und durch diese gestartet werden
+
+-- Grundlegender Umgang bei der Arbeit mit Variablen
+
+-- 1. eine Variable muss deklariert werden
+-- 2. danach wird die Variabe mit Werten gefuellt 
+--			- dazu verwendet man SET oder die SELECT Anweissung in Verbindung mit
+--			- Sprachkonstrukten der Sprache TQSL
+--					-IF/ELSE, Anweissungsbloecke. WHILE, TRY and CATCH
+--					-raiseerror, print, return
+-- 3. Anzeigen und Ausgeben des Inhalts der Variablen 
+-- eine normale Variable muss nicht Vernichtet werden, da sie nach dem GO im Stapel
+-- nicht mehr existiert
+
+-- eine Variable vom Typ Cursor wird deklariert, geoeffnet, mit fetch durchsucht,
+-- mit Close geschlossen und mit deallocate vernichtet
+-- ein Cursor wird immer dann verwendet, wenn fuer eine Menge von Ergebnissen
+-- fuer jede einzelne Teilmenge ein Entscheidung getroffen werden muss
+-- Beispiel: Ermitteln aller Daten und Protokolldateien einer Datenbank feststellen
+--			der Groesse jeder Datei, und die Datei vekleinern wenn eine kritische 
+--			Groesse erreicht wurde
+
+-------
+
+-- Dynamische SQL Anweisungen
+
+-- Beispiel:
+-- 1. select spalte, spalte from tabelle where spalte = @wert, GEHT IMMER
+-- 2. select @spvar, @spvar from @tabvar where @spvar = @wert; ES WIRD EINE DYNAMISCHE 
+--															   ABFRAGE BENOETIGT.
+
+declare @sp1 sysname, @sp2 sysname, @tab sysname, @wert int = 0;
+declare @sql varchar(max);
+set @sp1 = 'aname';
+set @sp2 = 'amenge';
+set @tab = 'artikel';
+set @wert = 300;
+
+-- Wie es nicht geht
+
+select @sp1 from @tab where @sp2 >= @wert;  -- SO GEHT ES NICHT!!
+
+-- Wie es geht
+
+execute('select ' + @sp1 + ' from ' + @tab + ' where ' + @sp2 + ' >= ' + @wert);
+
+						-- aufpassen auf Leerzeichen!!!!!!!
+
+-- ueberpruefen mit 
+
+declare @sp1 sysname, @sp2 sysname, @tab sysname, @wert int = 0;
+declare @sql varchar(max);
+set @sp1 = 'aname';
+set @sp2 = 'amenge';
+set @tab = 'artikel';
+set @wert = 300;
+
+
+set @sql = 'select ' + @sp1 + ' from ' + @tab + ' where ' + @sp2 + ' >= '
+					+ cast(@wert as varchar(200));
+select @sql;
+
+--oder
+
+exec(@sql);
+go
+						
+--------
+
+-- gespeicherte Systemprozeduren
+
+exec sp_help 'lieferant';
+exec sp_help;
+go
+
+-- Benutzerdefenierte gespeicherte Prozeduren
+
+-- eine Prozedur kann KEINEN, EINEN oder MEHRERE Parameter uebernehmen
+-- im Koerper einer Prozedur koennen mehrere Anweisungen enthalten sein 
+-- eine Prozedeur kann weitere Prozeduren aufrufen. 
+-- die Verschachtelungsebene sarf 32 nicht ueberschreiten 
+-- feststellen in welcher Ebene ich mich befinde mit @@nestlevel
+
+-- gespeicherte Prozeduren koennen auch mit CLR ( Common Language Runtime)
+-- erstellt werden, als Assembley im SQL Seerver bekannt gemacht werden
+-- und aus dem Assembly mit create procedure.. eine gespeicherte Prozedur erstellen
+-- CLR --> .NET farhige Programmierung
+
+-- Vorteile
+-- 1. die modulare Programmierung SQL Code wird zu einer Einheit kompiliert
+-- 2. die Geschwindigkeit: nach dem ersten Ausfuehren der Prozedur wird der 
+--    kompilierte Ausfuehrungsplan in den Prozedurcache abgeleget und jede erneute 
+--    Ausfuehrung greift nur noch auf den Prozedurcache zurueck
+-- 3. Reduzierung des Netzwerkverkehrs
+-- 4. Verwendung als Sicherheitsmechanismus. Werden Informationen aus kritischen
+--    Umgebungen (Internet) direkt in die Datenbank gespeichert sollte dazu
+--    eine Prozedur zwischengeschaltet werden. Plausibilitaetspruefung
+
+use standard
+go 
+
+-- gespeicherte Prozeduren erstellen
+
+create procedure mathe
+as
+declare @zahl1 float, @zahl2 float, @erg float;
+set @zahl1 = 3.896;
+set @zahl2 = 12.006;
+
+set @erg = @zahl1 / @zahl2;
+print 'Ergebnis:   ' + cast(@erg as varchar(100));
+go
+
+-- Prozedur starten
+
+exec mathe;
+go
+
+-----------
+
+-- Parameteruebergabe an die Prozedur
+
+create procedure mathe1 @zahl1 float, @zahl2 float
+as
+declare @erg float;
+
+set @erg = @zahl1 / @zahl2;
+print 'Ergebnis:   ' + cast(@erg as varchar(100));
+go
+
+exec mathe1 12.88,19.7;
+go
+
+-------------
+
+-- Parametervariablen der Prozedeur mit Default - Werten belegen
+
+create procedure mathe2 @zahl1 float = 1, @zahl2 float = 1
+as
+declare @erg float;
+
+set @erg = @zahl1 / @zahl2;
+print 'Ergebnis:   ' + cast(@erg as varchar(100));
+go
+
+exec mathe2 12.88,19.7; 
+
+exec mathe2 12.88; 
+
+exec mathe2;
+
+exec mathe2 default, 34.99;
+
+go
+
+-- die Prozedur soll das berechnete Ergebnis an das aufrufende Programm zuruekgeben
+
+
+create procedure mathe3 @zahl1 float = 1, @zahl2 float = 1, @erg float output
+as
+set @erg = @zahl1 / @zahl2;
+go
+
+-- Aufruf
+
+declare @ergebnis float
+exec mathe3 5.88, 2.66, @ergebnis output;
+print 'Ergebnis:   ' + cast(@ergebnis as varchar(100));
+go
+
+-- Fehlerhafte Parameterwerte verhindern
+
+create procedure mathe4 @zahl1 float = 1, @zahl2 float = 1, @erg float output
+as
+if @zahl2 = 0
+begin
+	raiserror('Du sollst nicht teilen durch NULL, du Horst!',10,1);
+end;
+set @erg = @zahl1 / @zahl2;
+go
+
+---
+
+declare @ergebnis float
+exec mathe4 5.88, 0, @ergebnis output;
+print 'Ergebnis:   ' + cast(@ergebnis as varchar(100));
+go
+
+exec mathe 4 13
+go
+
+-- Die Prozedur gibt einen Return - Wert zurueck
+
+create procedure mathe5 @zahl1 float = 1, @zahl2 float = 1, @erg float output
+as
+if @zahl2 = 0
+begin
+	return 8;
+end;
+set @erg = @zahl1 / @zahl2;
+go
+
+---
+
+declare @ergebnis float, @rw int;
+exec @rw = mathe5 5.88, 0, @ergebnis output;
+if @rw = 8
+raiserror('Du sollst nicht teilen durch NULL, du Horst!',10,1);
+else
+print 'Ergebnis:   ' + cast(@ergebnis as varchar(100));
+go
+
+/*
+wir schreiben eine Prozedur welcher eine Farbe eines Artikels uebergeben wird.
+Die Prozedur soll mir den Artikelname, Artikelnummer und den Lagerort 
+der Artikel mit der angegebenen Farbe anzeigen bzw zurueckgeben.
+(Erweiterung: wird keine Farbe übergeben sollen alle Artikel angezeigt werden)
+*/
+
+-- einfache Abfrage
+
+select anr, aname, astadt
+from artikel 
+where farbe = 'rot';
+go
+
+-- Prozedur erstellen ( Ergebnis anzeigen)
+
+create procedure farb_art @farbe varchar(10)
+as
+select anr, aname, astadt
+from artikel 
+where farbe = @farbe;
+go
+
+exec farb_art 'rot';
+go
+
+-- das Ergebnis anzeigen und den Übergabe Paramter temporaer stellen
+
+alter procedure farb_art @farbe varchar(10) = null
+as
+if @farbe is not null
+begin
+	raiserror('Artikel fuer die Farbe %s.',10,1,@farbe)
+	select anr, aname, astadt
+	from artikel 
+	where farbe = @farbe;
+end;
+
+if @farbe is null
+begin
+	raiserror('Artikel ueber alle Farben.',10,1,@farbe)
+	select anr, aname, astadt
+	from artikel;	
+end;
+go
+
+exec farb_art 'blau';
+exec farb_art;
+
+-- die Prozedur soll  das Ergebnis an das aufrufende Programm zurueckgeben
+-- 1. mit einer permanenten Tabelle
+
+-- Tabelle erstellen
+
+create table art_ergebnis
+(Artikelnummer char(3),
+Artikelname varchar(300),
+Lagerort varchar(200));
+
+-- Tabelle füllen
+
+insert into art_ergebnis exec farb_art 'rot';
+
+-- Tabelle abrufen
+
+select * from art_ergebnis;
+go
+
+-- 2. mit einer Tabellenvariablen
+
+declare @erg table (Artikelnummer char(3),
+				   Artikelname varchar(300),
+				   Lagerort varchar(200));
+insert into @erg exec farb_art 'rot';
+select * from @erg;
+go
+
+------
+
+Uebung 9:
+
+use standard;
+go
+
+/*
+Schreiben Sie eine Prozedur "obj_anz" der optional ein Datenbankobjektname- Bezeichener
+übergeben wird.
+Gültige Bezeichener (Objektnamen) sind : Tabelle, Sicht, Prozedur.
+Wird der Prozedur kein Bezeichner übergeben soll die Prozedur die Anzahl 
+der Tabellen, der Sichten und der Prozeduren anzeigen.
+Wird ein Bezeichner übergeben soll nur die Anzahl des angegebenen Bezeichners
+angezeigt werden.
+
+Verwenden für die Anzeige eine Tabellenvariable.
+Die Angaben zu den Objekten finden Sie in der Systemsicht sys.objects und
+nähere Infos in der Spalte Type.
+*/
+
+create procedure obj_anz @bezeichner varchar(200) = null
+as
+if @bezeichner is not null 
+   and @bezeichner not in('tabelle','sicht','prozedur')
+  begin
+  raiserror('Folgende Parameterwerte sind zulässig: Tabelle; Sicht; Prozedur.',10,1);
+  return;
+  end
+declare @ausgabe table(Objekttyp nvarchar(50), Anzahl int); 
+
+if @bezeichner is null
+  begin
+	select case when type = 'u' then 'Tabellen'
+						when type = 'v' then 'Sichten'
+						when type = 'p' then 'Prozeduren'
+						end as [Objekttyp], isnull(COUNT(*),0) as [Anzahl]
+	from sys.objects
+	where type in('u','v','p') and name not like 'sys_%'
+	and name not like 'sp_%' and name not like 'fn_%'
+	group by type;
+  end;
+
+if @bezeichner is not null
+begin
+if @bezeichner = 'sicht'
+  begin
+	insert into @ausgabe values('Sichten',
+					(select count(*) from sys.objects where type = 'v'));
+	select * from @ausgabe;
+  end;
+if @bezeichner = 'tabelle'
+  begin
+	insert into @ausgabe values('Tabellen',
+					(select count(*) from sys.objects where type = 'u'
+									  and name not like 'sys_%'));
+	select * from @ausgabe;
+  end;
+if @bezeichner = 'prozedur'
+  begin
+	insert into @ausgabe values('Prozeduren',
+					(select count(*) from sys.objects where type = 'p'
+									  and name not like 'sp_%'));
+	select * from @ausgabe;
+  end;
+
+end;
+go
+
+--------
+
+exec obj_anz;
+exec obj_anz 'Sicht';
+
+
+--------------------------------------------
+
+TAG 18:
+
+Uebung 10:
+
+use standard
+go
+
+/*
+
+SQL Server
+
+21. Juni 2022
+
+Aufgabe
+
+Schreiben Sie eine gespeicherte Prozedur welche den Fragmentierungsgrad der
+Indizes, der Tabellen der Datenbank Standard, überprüft und die Indizes bei Bedarf
+defragmentiert.
+Der Prozedur soll der Name der Tabelle und der Name eines Indexs übergeben
+werden. Der Name der Tabelle muss auf jeden Fall der Prozedur übergeben werden,
+der Indexname ist eine optionale Eingabe.
+Wird der Prozedur kein Indexname übergeben muss jeder Index der angegebenen
+Tabelle auf Fragmentierung überprüft werden und bei einem festgestellten
+Fragmentierungsgrad entsprechend behandelt werden.
+Wird ein Indexname angegeben dann soll nur dieser spezielle Index auf
+Fragmentierung überprüft werden und entsprechend behandelt werden.
+Es gilt, ist der Fragmentierungsgrad unter 8% soll mit dem Index nichts passieren. Ist
+der Fragmentierungsgrad zwischen 8% und 30% (Grenzen einschließlich) soll der
+Index reorganisiert werden.
+Liegt der Fragmentierungsgrad über 30% soll der Index neu gebildet werden.
+
+Je nachdem was die Prozedur für dem jeweiligen Index macht (Nichts, Reorganisieren
+oder Neu bilden), soll eine entsprechende Raiserror- Meldung (Schweregrad 10) für
+den Anwender der Prozedur generiert werden. Außerdem soll die Prozedur über eine
+geeignete Parameter- und Fehlerüberprüfung verfügen,
+
+Speichern Sie die fertige Prozedur im Datenaustausch, Ordner "SQL", Unterordner
+"Prozedur Indexdefrag" mit der Namenskonvention <Proz Ihr_ Name>.sql ab.
+Ich wünsche Ihnen viel Erfolg.
+
+*/
+
+-- Prozedur Index Defragmentieren.sql
+
+use standard;
+go
+create procedure ind_defr @tab nvarchar(200), @ind varchar(200) = null
+as
+declare @obj_id int, @ind_id int, @ind_name nvarchar(200)
+
+if not exists(select * from sys.objects where object_id = object_id(@tab))
+	begin
+		raiserror('Die Tabelle %s gibt es nicht in der Datenbank.',10,1,@tab)
+		return
+	end
+if @ind is null
+	begin
+		declare tab_ind cursor for
+		select object_id, index_id, name from sys.indexes where object_id = object_id(@tab)
+		open tab_ind
+		fetch tab_ind into @obj_id, @ind_id, @ind_name
+		while @@fetch_status = 0
+			begin
+					if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null)) < 13
+				begin
+					raiserror ('Index %s nicht fragmentiert.',10,1,@ind_name)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null))between 13 and 30
+				begin
+					execute ('alter index ' + @ind_name + ' on ' + @tab + ' reorganize;')
+					raiserror ('Index %s ist leicht fragmentiert. er wurde reorganisiert',10,1,@ind_name)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null)) > 30
+				begin
+					execute ('alter index' + @ind_name + ' on ' + @tab + ' rebuild;')
+					raiserror('Index %s ist stark fragmentiert. er wurde neu gebildet',10,1, @ind_name)
+				end
+				fetch tab_ind into @obj_id, @ind_id, @ind_name
+	end
+		deallocate tab_ind
+end
+if @ind is not null
+	begin
+		if not exists (select * from sys.indexes where name = @ind)
+		begin
+			raiserror ('Einen index mit dem namen %s gibt es nicht.',10,1,@ind)
+			return
+		end
+			else
+				begin
+					select @ind_id = index_id from sys.indexes where name = @ind
+					if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null)) < 13
+				begin
+					raiserror ('Index %s nicht fragmentiert.',10,1,@ind)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats (db_id(), object_id(@tab),@ind_id, null,null)) between 13 and 30
+				begin
+					execute ('alter index ' + @ind + ' on ' + @tab + ' reorganize;')
+					raiserror ('Index %s ist leicht fragmentiert. er wurde reorganisiert',10,1,@ind)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id, null,null)) > 30
+				begin				
+					execute ('alter index ' + @ind + ' on ' + @tab + ' rebuild;')
+					raiserror ('Index %s ist stark fragmentiert. er wurde neu gebildet',10,1,@ind)
+				end
+		end	
+	end
+go
+
+
+-- pruefen mit
+
+exec ind_defr;
+
+exec ind_defr Artikel;
+
+exec ind_defr Artikel, anr_ps;
+
+-- Prozedur loeschen
+
+drop procedure [ind_defr];  
+go  
+
+---------------------------------------------------------------------------------
+
+TAG 19:
+
+use standard
+go
+
+-- Datenbankschemas erstellen
+
+create schema lager;
+go
+create schema verkauf;
+go
+
+-- Datenbank Tabellen den jeweiligen Schemas zuordnen
+
+alter schema lager transfer dbo.artikel;
+go
+alter schema verkauf transfer dbo.lieferant;
+go
+alter schema verkauf transfer dbo.lieferung;
+go
+
+-- Was ist passiert?
+
+select * from artikel;			-- dieser Zugriff geht nicht mehr
+select * from lager.artikel;	-- funktioniert
+
+-- wenn diese Anweisung geht, dann wurden die Fremdschluessel im
+-- Hintergrund richtig umgeschrieben
+
+insert into verkauf.lieferung values('L04','A03',500,getdate());
+go
+
+------
+
+-- Berechtigungsverewaltung an Datenbanksystemen speziell am SQL Server
+
+-- die Verwaltung von Berechtigungen erfolt auf drei Ebenen
+-- 1. Serverebene (Instanzebene)
+-- 2. Datenbankebene
+-- 3. Object oder Schemaebene
+
+-- Logins einreichten
+-- Es gibt zwei Arten der Authentifizierung
+
+-- Windows Authentifizierung
+-- wird verwendet fuer Benutzer (Windowsuser, Windowsgruppen oder Anwendungen)
+-- die in der gleichen Domaene arbeiten wie SQL Server
+-- es wird nur der Benutzernmame des Logins gespeichert und nicht das Password
+-- beim Password vertraut SQL Server dem Active Directorie
+
+-- SQL Server Authentifizierung
+-- wird verwendet fuer Logins die sich von ausserhalb der Domaene mit dem
+-- SQL Server verbinden muessen
+
+-- die Instanz von SQLServer arbeitet in zwei Modis.
+--	1. Nur Windowsauthentifizierung
+--	2. gemischte Authentifizierung
+--	   dieser Modus kann grafisch oder mit der Prozedur sp_configure festgelegt werden
+--     Achtung, danach muss da DBMS gestartet werden
+
+
+use master;
+go
+
+
+-- Windows Authentifizierung
+
+create login [sql16\verwaltung] from windows;
+go
+create login [sql16\material] from windows;
+go
+create login [sql16\diana] from windows;
+go
+
+-- der Benutzer Horst darf sich nie mit dem SQL Server verbinden
+-- Horst ist Mitglied der Windowsgruppe 'verwaltung' und diese Gruppe
+-- hat einen Login in der SQL Server Instanz. Damit hat Horst automatisch
+-- auch einen Login.
+-- Problemloesung
+
+-- Horst Login erstellen
+
+create login [sql16\horst] from windows;
+go
+
+-- und Zugriff verweigern
+
+deny connect sql to [sql16\horst];
+go
+
+-- SQL Server Logins
+
+create login [Frank] with Password = 'Pa$$w0rd';
+go
+create login [Dieter] with Password = 'Pa$$w0rd';
+go
+
+-- Erstellen von Serverrollen, zuweisen von Serverberechtigungen
+-- arbeit mit festen Serverrollen
+
+-- Diana soll Sysadmin werden
+
+alter server role sysadmin add member [sql16\diana];
+
+-- erstellen einer benutzerdefinierten Serverrolle
+
+create server role useredit;
+go
+
+
+-- Mitglieder der Rolle sollen logins bearbeiten koennen
+
+grant alter any login to useredit;
+go
+
+-- der Rolle sollen die Benutzer der Windowsrolle Verwaltung zugewiesen werden
+
+alter server role useredit add member [sql16\Verwaltung];
+go
+
+-- weitere Berechtigung fuer die Serverrolle useredit
+
+
+grant alter any credential to [useredit]
+go
+
+----------
+
+-- 2.Ebene Datenbank 
+
+-- Datenbankbenutzer einrichten
+
+use standard;
+go
+
+/*
+die logins Verwaltung, Material, Frank und Dieter sollen sich mit der 
+Datenbank Standard verbinden duerfen
+*/
+
+create user verwaltung from login [sql16\verwaltung];
+go
+
+-- Standardschema fuer den Datenbankbenutzer Verwaltung festlegen
+
+alter user verwaltung with default_schema = verkauf;
+go
+
+create user material from login [sql16\material]
+with default_schema = lager;
+go
+
+/*
+Karl ist Lehrling und darf sich nicht mit der Datenbank Standard verbinden
+fuer ihn wird eine Trainingsdatenbank ertstellt in der er DBO ist.
+Weiterhin werden 2 Logins (Willi1 und Willi2) bereitgestellt denen er in der 
+Trainingsdatenbank Berechtigungen erteilen kann.
+*/
+
+-- master
+
+use master
+go
+
+create login willi1 with password = 'Pa$$w0rd';
+go
+create login willi2 with password = 'Pa$$w0rd';
+go
+create database training;
+go
+
+-- Karl den Datenbankzugriff auf standard verbieten und den 
+-- Zugriff auf Training erlauben
+
+-- standard
+
+use standard;
+go
+
+create user karl from login [sql16\karl];
+go
+deny connect to karl;
+go
+
+-- training
+
+use training;
+go
+
+create user karl from login [sql16\karl];
+go
+alter role db_owner add member karl;
+go
+
+use standard;
+go
+
+-- benutzerdefinierte Datenbankrolle erstellen
+
+create role dbconfig;
+go
+
+-- Berechtigungen zuweisen
+
+grant create view to dbconfig;
+go
+
+alter role dbconfig add member material;
+
+--------
+
+create user frank from login frank;
+go
+
+create user dieter from login dieter;
+go
+
+--------
+
+-- 3. Ebene -- Datenbankobjekte
+
+-- Frank und Dieter sollen SELECT, UPDATE und INSERT Berechtigungen
+-- auf die Tabellen Lieferant und Lieferung im Schema  Verkauf erhalten
+
+grant insert, update, select
+on schema::verkauf
+to frank;
+
+grant insert, update, select
+on schema::verkauf
+to dieter;
+
+-- Delete fuer die Tabelle Lieferung fuer Frank und Dieter erlauben
+
+grant delete
+on verkauf.lieferung
+to dieter;
+
+-- den Mitarbeitern von Verwaltung alle Rechte auf die Tabellen
+-- Lieferant, Artikel und Lieferung zuweisen
+
+grant insert, update, select, delete
+on schema::verkauf
+to verwaltung;
+
+grant insert, update, select, delete
+on schema::lager
+to verwaltung;
+
+
+TAG 20:
+
+Uebung 11
+
+/*
+
+Administration SQL Server 2016 - Sicherheit
+
+Sie sind Datenbankadministrator im Verwaltungsbereich einer Supermarktkette und haben die
+Aufgabe die Sicherheit fuer den Datenbankserver SQL Server 2016 zu ueberarbeiten.
+
+Alle Mitarbeiter, ausser Mitarbeiter im Aussendienst und Kunden, melden sich an der Domaene
+des Unternehmens an. Die neu erstellte Datenbank Donnerstag (Skript ist in ihrem Ordner
+DATENAUSTAUSCH\ SQL befindet sich auf einem Server mit dem Namen Ihrer
+Standardinstanz und unterstuetzt die Moeglichkeiten von Schemas. Die Tabellen Lieferant und
+Artikel befinden sich im Schema Office und die Tabelle Lieferung im Schema Stock.
+
+Sie selbst haben in der Domaene keine Administrativen Berechtigungen vom
+Netzwerkadministrator zugewiesen bekommen, besitzen aber ein Login mit Ihrem Namen (in
+unserem Fall "Student") in der Domaene und Sie sind lokaler Administrator auf dem Server auf
+dem SQL Server installiert ist. Ihnen ist das SA- Passwort bekannt und die Instanz von SQL
+Server verwendet die "gemischte Authentifizierung". Eine Sicherheitsrichtlinie im
+Unternehmen legt fest, dass alle administrativen Arbeiten unter Ihrem Login und als
+SYSADMIN nachvollziehbar sein muessen. Stellen Sie daher sicher dass Sie an der Instanz von
+SQL Server als Systemadministrator arbeiten koennen (da Sie das schon sind schreiben Sie nur
+die entsprechende Anweisung auf).
+
+Mitarbeiter Ralf, Ihr Stellvertreter wenn Sie im Urlaub oder krank sind, muss in der Lage sein
+vorhandene Datenbanken aendern, vergroessern, sichern und wiederherstellen zu koennen. Er
+muss ausserdem neue Datenbanken erstellen koennen. Weiterhin muss er die Sicherheit in der
+Instanz vollstaendig verwalten koennen. In den vorhandenen Benutzer Datenbanken (Standard
+und Donnerstag) arbeitet er als Datenbankbesitzer.
+
+Im Unternehmen gibt es drei Abteilungen: Office, Purchase und Customer Service.
+In der Abteilung "Office" arbeiten vier Mitarbeiter: Kerstin Ziegler, Andrea Fischer, Steffen
+Drosten und Diana Reichenbach.
+In der Abteilung "Customer Service" arbeiten drei Mitarbeiter: Bernd Albrecht, Petra Gutheil,
+Albert Ross sowie zwei Azubis Matthias Neuer und Maik Alter.
+In der Abteilung "Purchase" arbeiten zwei Mitarbeiter: Jessica Otto und Ute Sitte.
+Im Unternehmen sind vier Aussendienstmitarbeiter beschaeftigt: Dieter Acksteiner, Steffi
+Reichardt, Anke Grohall und Olaf Schroeter. Diese verbinden sich unregelmaessig mit dem SQL
+Server, in der Regel ueber Einwahlpunkte ausserhalb Ihrer Domaene.
+
+In der Windowsdomaene existieren gleichnamige Windowsgruppen wie die Abteilungen, denen
+die Mitarbeiter der jeweiligen Abteilung zugeordnet sind.
+
+Der Lehrling darf nicht auf die produktive Datenbank Donnerstag und Standard zugreifen, soll
+sich aber im Rahmen seiner Ausbildung mit SQL Server 2016 vertraut machen. Sie erstellen
+ihm eine Datenbank "Uebung" und zwei Testanmeldungen willi1 und willi2. Diese Logins soll
+er selbst als Datenbankbenutzer in der Datenbank "Uebung" einrichten koennen. Er sollte in die
+Lage sein alle Datenbankobjekte in der Datenbank Uebung selbst zu erstellen. Er muss auch
+mit den Prozeduren (voller Umfang) von Database Email arbeiten kann.
+
+Alle Mitarbeiter der Firma muessen sich mit der Datenbank Donnerstag verbinden koennen. Die
+Mitarbeiter der Abteilung Office besitzen auf die Tabellen Lieferant und Artikel die
+
+Administration SQL Server 2016
+Berechtigungen insert, update, delete und select. Auf die Tabelle Lieferung duerfen sie nur
+lesend zugreifen.
+
+Die Mitarbeiter der Abteilung Customer Service haben Zugriff, select, insert, update, auf die
+Tabelle Lieferung, Sie duerfen aber keine Lieferungen loeschen.
+
+Die Mitarbeiter der Abteilung Purchase muessen neue Artikel aufnehmen koennen, Artikel
+aendern koennen und auf alle anderen Tabellen der Datenbank einschliesslich Artikel lesend
+zugreifen koennen. Sie muessen weiterhin in die Lage versetzt werden, selbst Sichten zu
+erstellen die lesend auf die Tabellen Lieferant und Lieferung zugreifen koennen.
+
+Die Mitarbeiterin Kerstin soll Objekte in der Datenbank aendern koennen und gegebenenfalls
+neue Objekte (Tabellen, View, Prozeduren, Funktionen) erstellen. Sie darf aber keine
+Datenbanken erstellen oder loeschen duerfen. Weiterhin soll sie alle Anmeldungen an die
+Datenbank verwalten koennen.
+
+Die Aussendienstmitarbeiter sollen auf die Tabelle Lieferant Datensaetze lesen, einfuegen und
+aendern koennen und Vollzugriff (Insert, Update, Delete, Select) auf die Tabelle Artikel besitzen
+sowie lesenden Zugriff auf die Tabelle Lieferung.
+
+Ihre Aufgabe ist es die obenstehende Aufgabe durchzusetzen und in einem Skript fuer das
+Serverlogbuch darzustellen.
+
+Speichern Sie Ihre Skripte in der Freigabe "Datenaustausch\SQL\Berechtigungen" ab. 
+Im Dateinamen sollte klar Ihr Name zu erkennen sein.
+
+Mein Vorschlag:
+
+ersterbuchstabevorname_nachname_zugriff.sql
+
+Ich wuensche Ihnen viel Erfolg
+
+*/
+
+------
+
+
+
+
+
+
+
+
+
+
 
 
 
