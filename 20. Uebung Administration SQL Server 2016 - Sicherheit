@@ -150,3 +150,143 @@ create login Reichardt with password = 'Pa$$w0rd';
 create login Grohall with password = 'Pa$$w0rd';
 create login Schröter with password = 'Pa$$w0rd';
 go
+
+-- Zugriff auf Datenbank Urbiworks erteilen --
+
+use UrbiWorks;
+go
+
+create user Office from login [sql16\office]
+with default_schema = office;
+
+create user Purchase from login [sql16\purchase]
+with default_schema = Stock;
+
+create user Kundendienst from login [sql16\custumer_service]
+with default_schema = Lager;
+go
+
+-- Den Lehrlingen den Zugriff auf die Datenbank UrbiWorks verweigern --
+
+create user Neuer from login [sql16\neuer];
+create user [Alter] from login [sql16\alter];
+go
+deny connect to neuer;
+deny connect to [alter];
+go
+
+-- Den Lehrlingen den Zugriff auf die Datenbank Standard verweigern --
+
+use standard;
+go
+
+create user Neuer from login [sql16\neuer];
+create user [Alter] from login [sql16\alter];
+go
+
+deny connect to neuer;
+deny connect to [alter];
+go
+
+-- Für die Lehrlinge die Database Email ermöglichen --
+use msdb;
+go
+
+create user Neuer from login [sql16\neuer];
+create user [Alter] from login [sql16\alter];
+
+alter role databasemailuserrole add member Neuer;
+alter role databasemailuserrole add member [Alter];
+
+-- Für die Lehrlinge die Datenbank Uebung vorbereiten --
+use uebung
+go
+
+create user Neuer from login [sql16\neuer];
+create user [Alter] from login [sql16\alter];
+go
+
+alter role db_owner add member neuer;
+alter role db_owner add member [alter];
+go
+
+create user Wil1li1 from login [willi1];
+create user Willi2 from login [Willi12];
+go
+
+-- Berechtigungen für Kerstin Ziegler --
+
+use master;
+go
+
+create login [sql16\Ziegler] from windows;
+deny create any database to [sql16\ziegler];
+deny alter any database to [sql16\ziegler];
+go
+
+use urbiworks;
+go
+
+create user Ziegler from login [sql16\Ziegler];
+go
+
+alter role db_ddladmin add member ziegler;
+grant alter any schema to ziegler;
+grant alter any user to ziegler;
+go
+
+-- Außendienstmitarbeiter --
+
+create user Acksteiner from login Acksteiner;
+create user Reichardt from login Reichardt;
+create user Grohall from login Grohall;
+create user Schröter from login Schröter;
+go
+
+create role aussendienst;
+go
+
+alter role aussendienst add member acksteiner´;
+alter role aussendienst add member Reichardt;
+alter role aussendienst add member grohall;
+alter role aussendienst add member schröter;
+
+grant select, insert, update
+on office.lieferant to aussendienst;
+
+grant insert, update, delete, delete
+on office.artikel to aussendienst;
+
+grant select on schema::stock to aussendienst;
+
+-- Abteilung Office --
+
+grant select, insert, update, delete
+on schema::office to Office;
+
+grant select
+on schema::stock to Office;
+go
+
+-- Abteilung Kundendienst --
+
+grant select, insert, update
+on stock.lieferung to kundendienst;
+go
+
+-- Abteilung Purchase --
+
+grant insert, update
+on office.artikel to purchase;
+
+grant select
+on schema::office to purchase;
+
+grant select
+on schema::stock to purchase;
+
+grant alter
+on schema::stock to purchase
+grant create view to purchase;
+go
+
