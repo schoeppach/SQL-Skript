@@ -4102,6 +4102,7 @@ grant insert, update, select, delete
 on schema::lager
 to verwaltung;
 
+------------------------------------------------------------------------
 
 TAG 20:
 
@@ -4260,7 +4261,7 @@ create login Grohall with password = 'Pa$$w0rd';
 create login Schröter with password = 'Pa$$w0rd';
 go
 
------------------------------------------------------------------------------
+----------
 
 -- Zugriff auf Datenbank Urbiworks erteilen --
 
@@ -4401,10 +4402,9 @@ on schema::stock to purchase
 grant create view to purchase;
 go
 
+--------------------------------------------------------
 
-------
-
-TAG 21:
+TAG 22:
 
 
 use master
@@ -4601,6 +4601,204 @@ select * from verkauf.lieferant;
 
 -- damit Auftraege ausgefuehrt werden koennen - muss der 
 -- SQL Server Agent gestartet werden
+
+----------------------------------------------------------------------
+
+TAG 22:
+
+use standard;
+go
+
+-- Uebung
+
+/*
+Schreiben Sie eine gespeicherte Prozedur, der Name einer Benutzerdatenbank
+uebergeben wird.
+Die Prozedur soll alle offenen Prozesse fuer diese Datenbank killen.
+*/
+
+-- Loesung
+
+use master;
+go
+
+create procedure p_KillDatabaseCon @dbname sysname
+as
+set nocount on;
+if @dbname in('master','msdb','tempdb','model','distribution')
+ begin
+	raiserror('Nur Benutzerdatenbanken angeben!',10,1);
+	return;
+ end;
+
+declare @minproz int, @maxproz int, @sql nvarchar(max);
+select @minproz = min(spid) 
+	   from master.dbo.sysprocesses where dbid = db_id(@dbname);
+select @maxproz = max(spid) 
+	   from master.dbo.sysprocesses where dbid = db_id(@dbname);
+
+while @minproz <= @maxproz
+begin
+  set @sql = 'kill ' + cast(@minproz as varchar(10));
+  exec(@sql);
+  set @minproz = @minproz + 1;
+end;
+set nocount off;
+go
+
+-- pruefen mit
+
+exec p_killConDatabase 'standard';
+
+-------
+
+-- benutzerdefinierte Funktionen
+
+-- Unterschied zwischen gespeicherten Prozeduren und Funktionen
+
+-- Aufruf einer Prozedur
+exec sp_help 'lieferant';
+
+-- Aufruf einer Funktion
+select getdate();
+
+-- Berechtigungen zum erstellen von Funktionen
+create login Uwe with password = 'Pa$$w0rd';
+go
+
+use standard;
+go 
+create user Uwe from login [Uwe];
+go
+
+-- Berechtigungen zum erstellen von Funktionen
+grant create function to Uwe;
+
+-- Berechtigung zum aendern des Schemas dbo
+grant alter on schema::dbo to Uwe;
+go
+
+-- Skalarfunktionen
+
+-- gibt genau einen Wert zurueck
+-- kann mehrere SQL Anweisungen im Funktionskoerper haben
+-- der Rueckgabewert entspricht einen skalaren Basisdatentypen
+
+/*
+Es soll eine Funktion erstellt werden der ein Datum uebergeben wird.
+Aus diesem Datum soll die Nummer der ISO Woche berechnet werden.
+*/
+
+create function dbo.isowoche (@datum datetime)
+returns integer
+as
+begin
+	declare @woche integer
+	set @woche = datepart(wk, @datum) + 1 - 
+				 datepart(wk,cast(datepart(yy,@datum) as char(4)) + '0104');
+
+	-- wenn der 1. 2. und 3. Januar zur letzten Kalenderwoche
+	-- des Vorjahres gehoert
+	if @woche = 0
+		set @woche = dbo.isowoche(cast(datepart(yy, @datum) - 1 as char(4)) + 
+					 '12' + cast (24 + datepart(day, @datum) as char(2))) + 1;
+
+	-- wenn der 29. 30. und 31. Dezember zur ersten Kalenderwoche
+	-- des neuen Jahres gehoert
+	if datepart(mm, @datum) =12 and ((datepart(dd, @datum) - 
+	   datepart(dw, @datum)) >= 28)
+	   set @woche = 1;
+	return @woche;
+end;
+go
+
+-- Test
+
+select dbo.isowoche('01.01.2021');
+
+-- extra für Herr Biss
+select datename(dw, '17.07.2022') + ' in der ' +
+	   cast((select dbo.isowoche('17.07.2022')) as varchar(4)) + ' Kalenderwoche';
+
+use standard;
+go
+
+-- Uebung
+
+/*
+Schreiben sie eine Funktion der ein Datum und ein einzelnes Zeichen übergeben
+wird. Das Ergebnis koennte wie folgt aussehen: 29#6#2022
+*/
+
+--loesung
+
+create function fk_datsep(@datum date, @sep char(1))
+returns varchar(20)
+as
+begin
+    return (select datename(dd,@datum) + @sep + cast(datepart(mm,@datum)
+    as varchar(20)) + @sep + datename(yyyy,@datum));
+end;
+go
+
+select dbo.fk_datsep(getdate(), '/');
+go
+
+--validierung von Postleitzahlen:
+
+create function dbo.fk_plzvalid (@plz varchar(5))
+returns bit
+as
+  begin
+  declare @result bit;
+  if @plz like '[0-9][0-9][0-9][0-9][0-9]'
+      set @result = 1;
+  else
+      set @result = 0;
+  return @result;
+  end;
+go
+
+select dbo.fk_plzvalid ('ABC12') as [Nein], dbo.fk_plzvalid ('99082') as [Ja];
+go    
+
+----------------------
+
+-- Inlinefunktionen
+
+-- Ausgangspunkt
+
+create view v_lftart
+as
+select a.lnr, lname, lstadt, ldatum, aname
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+	  join artikel as c on b.anr = c.anr
+where lstadt = 'Hamburg'
+and datepart(yyyy,ldatum) = 1990;
+go
+
+select * from v_lftart;
+go
+
+-- diese Sicht ist sehr starr.
+-- es bietet sich eine Inlinefunktion an.
+
+create function dbo.fk_lftart(@ort varchar(100), @jahr int)
+returns table
+as
+return (select a.lnr, lname, lstadt, ldatum, aname
+		from lieferant as a join lieferung as b on a.lnr = b.lnr
+		join artikel as c on b.anr = c.anr
+		where lstadt = @ort
+		and datepart(yyyy,ldatum) = @jahr);
+go
+
+select * from dbo.fk_lftart('Hamburg', 1990);
+
+
+
+
+
 
 
 
