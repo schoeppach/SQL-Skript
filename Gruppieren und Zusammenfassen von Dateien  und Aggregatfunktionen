@@ -1,0 +1,228 @@
+use standard
+go 
+
+-- Gruppieren und Zusammenfassen von Dateien
+
+-- Aggregatfunktionen
+
+-- sie beziehen sich auf die Daten einer Spalte der Tabelle (ausser count)
+-- und geben einen Zusammenfassungswert zurueck
+
+-- das Ergebnis ist genau ein Wert
+
+-- alle Aggregatfunktionen ignorieren NULL-Marken
+
+-- die fuenf am haufigsten gebrauchten Aggregatfunktionen sind
+
+--      avg     (average) Durchschnitt der nummerischen Spaltenwerte
+--      max     der groesste Spaltenwert
+--      min     der kleinste Spaltenwert
+--      sum     die Summe der nummerischen Spaltenwerte 
+--      count   die Anzahl der Spaltenwerte
+
+select  sum(lmenge) as [Liefermenge gesamt],
+        max(lmenge) as [groesste Liefermenge],
+        min(lmenge) as [kleinste Liefermenge],
+        avg(lmenge) as [durchschnittliche Liefermenge],
+        count(lnr) as [Anzahl der Lieferungen]
+from lieferung;
+
+-- Die groesste Liefermenge
+
+select max(lmenge) from lieferung;
+
+-- Neugierig: ich will wissen wer das ist!
+
+select max(lmenge),lnr from lieferung;   -- Fehler
+
+-- Alle Spalten in der Select-Liste die kein Argument einer Aggregatfunktion
+-- sind muessen in einer group by Klausel stehen
+
+select max(lmenge),lnr from lieferung
+group by lnr;
+
+-- das veraendert die Fragestellung
+-- die groesste Lieferung eines jeden Lieferanten
+
+-- Agregatfunktion COUNT
+
+insert into Lieferant values('L10','Meier',null,'Erfurt')
+
+-- Anzahl der Lieferanten
+
+select count(lnr) from lieferant;       -- immer richtig, weil die Primaer-Spalte 
+                                        -- als Argument verwendet wird
+
+select count(*) from lieferant;         -- immer richtig, weil es in einer Tabelle
+                                        -- keine leeren Datensaetze gibt
+                                        -- count(*) zaehlt die DS (Datensaetze) der
+                                        -- angebenen Tabelle
+
+select count(status) from lieferant;    -- nicht immer richtig,weil die Spalte 
+                                        -- Unbekannte WErte enthalten kann.
+
+-- alle Aggregatfunktionen ignorieren NULL-Marken
+
+select count(lnr) from lieferant;       -- 6 DS
+select count(status) from lieferant;    -- 5 DS
+
+-------
+select *
+from lieferant
+
+-- Das groesste Gesamtlagergewicht aller Artikel in Kilo
+
+select gewicht * 0.001 * amenge as [Gesamtlagergewicht]
+from artikel;
+
+select max(gewicht * 0.001 * amenge)
+from artikel;
+
+-- die letzte Lieferung von 'A02'
+
+select max(ldatum) from lieferung where anr = 'A02'
+
+-- Anzahl der Lieferanten die geliefert haben
+
+select count(lnr) from lieferung;          -- FALSCH -- liefert die Anzahl 
+                                                     -- der Lieferungen
+
+select count(distinct lnr) from lieferung; -- RICHTIG
+
+-- Gesucht ist die groesste Status der Lieferanten am jeweiligen
+-- Wohnort ...
+
+select lstadt, max(status)
+from lieferant
+group by lstadt;
+
+-- ... wenn der duschschnittliche Statuswert am jeweiligen Wohnort nicht kleiner
+-- als 15 ist
+
+select lstadt, max(status)
+from lieferant
+where avg(status) > 15
+group by lstadt;                -- FALSCH
+
+-- in einer Where-KLausel darf niemals eine Aggregatfunktion stehen.
+-- Die Bedingung ist eine Bedingung fuer die Gruppe!
+
+select lstadt, max(status)
+from lieferant
+group by lstadt
+having avg(status) > 15;
+
+-- ohne die Aachner Lieferanten
+
+select lstadt, max(status)
+from lieferant
+group by lstadt
+having avg(status) > 15 and lstadt <> 'Aachen';     -- Unanstaendig
+
+select lstadt, max(status)
+from lieferant
+where lstadt <> 'Aachen'
+group by lstadt
+having avg(status) > 15;                            -- RICHTIG
+
+
+Uebung 3:
+
+1.
+
+-- schreiben sie eine Abfrage, die alle im August durchgefuehrten 
+-- Lieferungen zaehlt
+
+select count(lnr) as [Anzahl der Lieferungen]
+from lieferung
+where datepart(mm,ldatum) = 8
+
+-- pruefen mit
+select *
+from lieferung
+
+2.
+
+-- schreiben sie eine Abfrage, welche die Anzahl aller Nicht-Nullwerte 
+-- des Feldes "lstadt" in der Lieferantentabelle ermittelt
+
+select count(lstadt) from lieferant;
+
+3.
+
+-- schreiben sie eine Abfrage, die die jeweils kleinste Lieferung eines
+-- jeden Lieferanten anzeigt
+
+select lnr, min(lmenge) 
+as [kleinste Liefermenge] 
+from lieferung
+group by lnr                    
+
+4.
+
+-- schreiben sie eine Abfrage, die den ersten Lieferanten ermittelt, dessen
+-- Name mit "S" beginnt (in alphabetischer Reihenfolge)
+
+select * from lieferant
+where lname like '[s]%'
+order by lname asc
+
+-- oder
+
+select min(lname)
+from lieferant
+where lname like 's%';
+
+5.
+
+-- schreiben sie eine Abfrage, mit der sie den hoechsten Lagerbestand von
+-- Artikeln am jeweiligen Lagerort ermitteln koennen
+
+select astadt, max(amenge)
+from artikel
+group by astadt;
+
+-- pruefen mit
+select * from artikel
+
+6.
+
+-- wie viele unterschiedliche Artikel wurden von jedem Lieferanten geliefert
+
+select lnr, 
+count (distinct anr)
+from Lieferung
+group by lnr;
+
+7.
+
+-- gesucht sind die Artikelnummern die weniger als dreimal geliefert wurden
+
+select anr
+from lieferung
+group by anr
+having count (anr) < 3
+
+8.
+
+-- gesucht sind die Lieferantennummern und die Gesamtliefermenge der Lieferanten
+-- die seit dem 13.07.1990 eine Gesamtliefermenge von mehr als 600 Stueck hatten
+
+select lnr, sum (lmenge)
+from lieferung
+where ldatum >= '13.07.1990'
+group by lnr
+having sum (lmenge) > 600
+
+9.
+
+-- gesucht ist der in den jeweiligen Wohnorten der Lieferanten kleinste und groesste
+-- Statuswert, fuer alle die Lieferanten mit einer Lieferantennummer zwischen
+-- "L01" und "L99" wenn der kleinste Statuswert der jeweiligen Stadt 10 uebersteigt
+-- und der groesste Statuswert der jeweiligen Stadt 50 nicht uebersteigt
+
+select min(status), max(status), lstadt
+from lieferant
+where lnr between 'L01' and 'L99'
+group by lstadt
+having min(status) > 10 and max(status) <= 50;
