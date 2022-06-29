@@ -1,0 +1,117 @@
+-- Dateigruppen erstellen
+
+use master
+go
+
+-- 1. Dateigruppen (Aktiv, Passiv und Indexe) erstellen
+
+alter database standard add filegroup passiv;
+go
+
+alter database standard add filegroup aktiv;
+go
+
+alter database standard add filegroup indexe;
+go
+
+-- 2. Datenbankdateien erstellen und den entsprechenden Dateigruppen 
+--	  zuordnen.
+
+alter database standard 
+add file (name = standard_passiv,
+			filename = 'j:\db.daten1\standard_passiv.ndf',
+			size = 20 GB,
+			maxsize = 25 GB,
+			filegrowth = 5%) to filegroup passiv;
+
+alter database standard 
+add file (name = standard_aktiv,
+			filename = 'k:\db.daten2\standard_aktiv.ndf',
+			size = 20 GB,
+			maxsize = 25 GB,
+			filegrowth = 5%) to filegroup aktiv;
+
+alter database standard
+add file (name = standard_index,
+			filename = 'l:\indexe\standard_index.ndf',
+			size = 10 GB,
+			maxsize = 20 GB,
+			filegrowth = 1 GB) to filegroup indexe;
+
+-- Damit Datenbankbenutzer die berechtigt sind in der Datenbank
+-- Tabellen, Sichten, Prozeduren oder Funktionen zu erstellen, diese nicht
+-- aus Versehen in der Dateigruppe PRIMARY erstellen, machen wir
+-- jetzt die Dateigruppe Passiv zur Default Dateigruppe
+
+alter database standard modify filegroup passiv default;
+go
+
+-- wunsch von Herrn Ruhland
+-- Maxsize von der Datei in PRIMARY und des Transaktionsprotokol
+-- aendern
+
+-- pruefen mit
+
+exec sp_helpdb standard;
+
+alter database standard
+modify file (name = standard,
+			 maxsize = 20 GB);
+go
+
+alter database standard
+modify file (name = standard_log,
+			 maxsize = 15 GB);
+go
+
+-- Tabelle in die entsprechende Dateigruppe verschieben
+-- Tabellen koennen nur in eine andere Dateigruppe verschoben werden in dem
+-- der gruppierte Index (Primaerschluessel) geloescht wird und sofort wieder
+-- neu erstellt wird und ihm der Dateigruppenname zugewiesen wird
+
+-- die Tabellen Lieferant und Artikel nach 'Passiv' verschieben
+
+
+use standard
+go
+
+-- Primaerschluessel loeschen
+
+alter table lieferung drop constraint lnr_fk;
+
+alter table lieferung drop constraint anr_fk;
+
+-- 1. Tabelle Lieferant
+
+alter table lieferant drop constraint lnr_pk;
+go
+
+alter table lieferant add constraint lnr_pk primary key(lnr) on passiv;
+
+
+-- 2. Tabelle Artikel
+
+alter table artikel drop constraint anr_pk;
+go
+
+alter table artikel add constraint anr_pk primary key(anr) on passiv;
+
+
+-- 3. Tabelle Lieferung
+
+alter table lieferung drop constraint lief_pk;
+go
+
+alter table lieferung add constraint lief_pk primary key(lnr,anr,ldatum) on aktiv;
+
+-- Fremdschluessel
+
+alter table lieferung add constraint lnr_fk foreign key(lnr)
+			references lieferant(lnr) on update cascade;
+go
+
+alter table lieferung add constraint anr_fk foreign key(anr)
+			references artikel(anr);
+go
+
+exec sp_help lieferant;
