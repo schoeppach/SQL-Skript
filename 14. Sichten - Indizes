@@ -1,0 +1,173 @@
+/* Datenbankobjekte um Abfragen effektiver einzusetzen und
+schneller zu machen
+
+-Sichten
+-Indizes
+-Transact SQL Stapelprogramme
+-Cursor
+-gespeicherte Prozeduren
+-benutzerdefinierte Funktion
+-Trigger
+
+*/
+
+-- Views (gespeicherte Abfragen)
+-- Vorteil die Abfrage wird bei der ersten Ausführung kompiliert
+--		und der Ausfuehrungsplan in den Prozerdurcache gelegt.
+--		jeder weiter Aufruf der Sicht verwendet den bereits kompilierten
+--		Ausfuehrungsplan
+
+-- eine Sicht ermöglicht eine horizontale und vertikale Partionierung von
+-- Tabelleninfos
+-- Beispiel: Der Meister des Meisterbereichs 2 soll nur die Mitarbeiter
+--		angezeigt bekommen die in seinem Meisterbereich arbeiten (horizontal)
+--		aber ohne die Spalte 'Gehalt' (vertikal)
+
+-- Sichten werden mit create view .. erstellt, mit alter view ... geaendert
+-- und mit drop view .. geloescht
+
+-- die create view - Anweisung darf nicht mit anderen SQL Anweisungen in einem
+-- Stapel stehen! mit 'go' seperieren
+
+create view hamb_lief
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg';
+go
+
+-- wo werden Sichten gespeichert?
+
+select * from sys.objects where object_id = object_id('hamb_lief');
+select * from sys.views where object_id = object_id('hamb_lief');
+
+-- wo liegt die Sichtdefinition
+
+select * from sys.sql_modules where object_id = object_id('hamb_lief');
+
+--oder
+
+exec sp_helptext 'hamb_lief';
+
+select * from hamb_lief;
+go
+
+-- view definition verschluesseln
+
+alter view hamb_lief
+with encryption
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg';
+go
+ 
+ --pruefen mit
+
+exec sp_helptext 'hamb_lief';
+
+-- rueckgaengig mit
+
+alter view hamb_lief
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg';
+go
+
+--  Sichten mit Join
+
+create view lieflief
+as
+select a.lnr, lname, status, lstadt, anr, lmenge, ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr;
+go
+
+select * from lieflief;
+go
+, 
+-- Datenaenderung ueber Sichten (Insert, Update, Delete)
+
+-- Datenaenderungen auf Sichten die sich auf mehr als eine Tabelle beziehen
+-- sind nicht moeglich oder nur mit INSTEAD - Trigger moeglich
+
+--Insert
+
+insert into hamb_lief values('L30','Kirsten','Hamburg');
+
+select * from hamb_lief;
+select * from lieferant;
+
+insert into hamb_lief values('L31','Meier','Weimar');
+
+
+select * from hamb_lief;
+select * from lieferant;
+
+-- Sicht aendern with check option
+
+alter view hamb_lief
+as
+select lnr, lname, lstadt
+from lieferant
+where lstadt = 'Hamburg'
+with check option;
+go
+
+
+insert into hamb_lief values('L32','Lauch','Weimar');  --Fehler
+
+insert into hamb_lief values('L32','Lauch','Hamburg'); -- Geht
+
+----
+
+create view hamb_lief1
+as
+select lnr, lname
+from lieferant
+where lstadt = 'Hamburg'
+with check option;
+go
+
+select * from hamb_lief1;
+
+insert into hamb_lief1 values('L33','Maria','Hamburg');  -- geht nicht
+
+insert into hamb_lief1 values('L33','Maria');		 -- geht nicht
+
+-- Update
+
+update hamb_lief
+set lstadt = 'Erfurt'
+where lnr = 'L32';				-- Fehler wegen der with check option
+
+update hamb_lief
+set lname = 'Kaltduscher'
+where lnr = 'L32';				-- geht
+
+
+select * from hamb_lief;
+
+/*
+was wurde in der Datenbank gemacht
+
+update lieferant
+set lname = 'Kaltduscher'
+where lnr = 'L32'				-- kommt von Update
+and lstadt = 'Hamburg';			        -- kommt von der Sicht
+*/
+
+-- DELETE
+
+-- niemals ohne where - Klausel  
+-- weil
+-- delete hamb_lief;			        -- loescht alle Hamburger
+--						-- Lieferanten
+
+delete hamb_lief
+from hamb_lief as a left join lieferung as b on a.lnr = b.lnr
+where b.lnr is null;
+
+-- loescht alle Hamburger Lieferanten ohne Lieferung
+
+select * from Hamb_lief;
