@@ -1,0 +1,194 @@
+use master
+go
+
+-- Sichern und Wiederherstellen von Datenbanken
+-- gesichert koennen alle benutzerdefinierten Datenbanken werden und 
+-- Systemdatenbanken ausser die tempdb. die tempdb kann deshalb nicht
+-- gesichert werden weil sie beim herunterfahren des DBMS geloescht
+-- und beim hochfahren neu erstellt wird
+
+-- Datenbanken sollten regelmaessig gesichert werden, egal welches 
+-- System der Hochverfuegbarkeit verwendet wird
+
+-- Art und Weise der Sicherungsstrategie ist abhaengig vom 
+-- Wiederherstellungsmodel der Datenbank
+
+-- 1. einfaches Wiederherstellungsmodel
+--		 bei jedem Checkpoint wird der nicht aktive Teil des Tranaktionsprotokol
+--		 abgeschnitten
+-- deshalb kann ich in diesem Modell dei Datenbank nur vollstaendig und 
+-- differentiell sichern
+
+-- 2. vollstaendiges  Wiederherstellungsmodel
+--		 bei einem Checkpoint wird das Protokoll nicht abgeschnitten
+--		 vollstaendige, differentielle und Protokollsicherungen sind moeglich
+-- in diesem Model ist es moeglich die Datenbank bis zum Ausfallzeitpunkt
+-- wiederherzustellen
+-- damit das Protokoll nicht vollaueft (Fehler 9002) muss die Datenbank
+-- regelmaessig eine Protokollsicherung durchfuehren.
+-- Nur bei einer Protokollsicherung wird der nicht aktive Teil des Protokolls
+-- abgeschnitten
+
+-- Massenprotolliertes Wiederherstellungsmodel ist eine Ergaenzung des
+-- vollstaendigen Wiederherstellungsmodel und wird verwendet 
+-- bei Massenkopiervorgaengen (bulk insert, select into ..., insert
+-- mit openrowset(), ...)
+
+-- jede Sicherungslinie einer Datenbank beginnt mit einer vollstaendigen Sicherung
+-- der Wechsel vom einfachen zum vollstaendigen Wiederherstellungsmodel
+-- und umgekehrt unterbricht die Linie
+
+------
+
+use master;
+go
+
+-- wohin sichern
+-- direckt auf Bandlaufwerk (nicht mehr empfohlen weil alt)
+-- eine Netzwerkfreigabe
+-- auf eine lokale Festplatte (Device) sichern auf eine Netzwerkfreigabe
+-- oder Bandlaufwerk
+
+-- empfohlen wird ein sogenanntes Sicherungsdevice
+--			es handelt sich um einen Namen fuer Speicherort
+-- Sicherungsdevice erstellen
+
+exec sp_addumpdevice 'disk', 'master_sicher', 'g:\dbbackup\master_sicher.bak';
+go
+
+--------
+
+-- Master Datenbank sichern
+
+backup database master to master_sicher with name = 'Master_voll';
+
+-- MSDB wurde grafisch gesichert
+
+-- Datenbank Standard sichern
+
+-- 1. vollstaendige Datenbanksicherung
+
+backup database standard to standard_sicher with name = 'standard_voll';
+go
+
+use standard 
+go
+
+insert into verkauf.lieferant values('L20','Krause',5,'Erfurt');
+
+-- sichern des Protokolls
+
+backup log standard to standard_sicher with name = 'Protokoll';
+
+---
+
+insert into verkauf.lieferant values('L21','Pausine',5,'Erfurt');
+
+-- sichern des Protokolls
+
+backup log standard to standard_sicher with name = 'Protokoll';
+
+---
+
+insert into verkauf.lieferant values('L22','Mittag',5,'Erfurt');
+
+-- sichern des Protokolls
+
+backup log standard to standard_sicher with name = 'Protokoll';
+
+
+-- differentielle Datenbanksicherung
+
+backup database standard to standard_sicher 
+with name = 'standard_diff', differential;
+go
+
+insert into verkauf.lieferant values('L23','Fruehstueck',5,'Erfurt');
+
+-- sichern des Protokolls
+
+backup log standard to standard_sicher with name = 'Protokoll';
+
+---
+
+insert into verkauf.lieferant values('L24','Brunch',5,'Erfurt');
+
+-- sichern des Protokolls
+
+backup log standard to standard_sicher with name = 'Protokoll';
+
+---
+
+insert into verkauf.lieferant values('L25','Kaffee',5,'Erfurt');
+
+-- sichern des Protokolls
+
+backup log standard to standard_sicher with name = 'Protokoll';
+
+-- sichern des Protokollfragments (auf Master Datenbank)
+
+use master;
+go
+
+backup log standard to standard_sicher with name = 'fragment', norecovery;
+go
+
+-- Sicherungen ueberpruefen
+
+-- 1. ist der Medienheader intakt
+
+restore verifyonly from standard_sicher;
+
+-- 2. allgemeine Angaben ueber das Sicherungsmedium
+
+restore labelonly from standard_sicher;
+
+-- 3. Aufbau der gesicherten Datenbank
+
+restore filelistonly from  standard_sicher;
+
+-- 4. Sicherungshistory anzeigen (Sicherungsverlauf)
+
+restore headeronly from standard_sicher;
+
+-- Wiederherstellen der Datenbank Standard
+
+-- vollstaendige Sicherung wiederherstellen
+
+restore database standard from standard_sicher with file = 1, norecovery;
+go
+
+restore headeronly from standard_sicher;
+
+---
+
+restore database standard from standard_sicher with file = 6, norecovery;
+go
+
+restore headeronly from standard_sicher;
+
+---
+
+restore log standard from standard_sicher with file = 6, norecovery;
+go
+
+restore log standard from standard_sicher with file = 7, norecovery;
+go
+
+restore log standard from standard_sicher with file = 8, recovery;
+go
+
+-- Datenbanken wiederhergestellt
+
+use standard;
+go
+select * from verkauf.lieferant;
+
+-- Aufgaben automatisieren
+
+-- dafuer verwewndet man Auftraege
+-- ein Auftrag besteht aus einem oder mehrern Auftragsschritten
+-- ein Auftrag besitzt keinen oder mehreren Zeitplaene
+
+-- damit Auftraege ausgefuehrt werden koennen - muss der 
+-- SQL Server Agent gestartet werden
