@@ -1,0 +1,181 @@
+use standard
+go 
+
+-- loeschen
+-- delete lieferant where lnr > 'L05';
+-- delete lieferung where lmenge = 500 or datepart(yyyy,ldatum) > 1990;
+
+select * 
+from lieferant cross join lieferung;
+
+-- kartesisches Produkt wir immer groesser je mehr cross joins ausgefuehrt werden
+
+select * 
+from lieferant cross join lieferung cross join artikel 
+cross join lieferant as a 
+cross join lieferung as b 
+cross join artikel as c
+
+-- INNER JOINS
+
+-- liefert alle Datensaetze der am Join beteiligten Tabellen die die
+-- Verknuepfungsbedingungen erfuellen
+
+-- Lieferanten mit ihren Lieferungen
+
+select *
+from lieferant join lieferung on lieferant.lnr = lieferung.lnr;
+
+-- oder 
+
+select *
+from lieferant as a join lieferung as b on a.lnr = b.lnr;
+
+-- im  dargstellten Ergebnis besteht eine Redundanz an Tabellenspalten (lnr)
+-- wenn die entfernt wird sprechen wir ueber einen NATURAL Join
+
+select a.lnr, lname, status, lstadt, anr, lmenge, ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr;
+
+-- die Lieferungen Hamburger Lieferanten im August 1990
+
+select a.lnr, lname, status, lstadt, anr, lmenge, ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+where lstadt = 'Hamburg'
+and datepart(mm,ldatum) = 8 
+and datepart(yyyy,ldatum) = 1990;
+
+-- Nummern und Namen der Lieferanten die geliefert haben
+
+select a.lnr, lname
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+
+-- Im Ergebnis erscheinen 12 Datensaetze. Einige sind identisch.
+
+select *
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+
+-- aus der logischen Menge des Joins zwischen Lieferant und Lieferung
+-- lasse ich mir die Spalten lnr und lname anzeigen
+
+-- wie entferne ich die doppelten DS -- mit DISTINCT
+
+select distinct a.lnr, lname
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+
+-- wenn bei einem Join nur die Spalten einer der am Join beteiligten
+-- Tabellen angezeigt werden, dann benoetige ich DISTINCT
+
+-- Nummern, Namen und Lieferdatum der roten und blauen Artikel
+-- die von Lieferanten aus Ludwigshafen geliefert wurden
+
+select a.anr, aname, ldatum
+from artikel as a join lieferung as b on a.anr = b.anr
+    join lieferant as c on b.lnr = c.lnr
+where farbe in ('rot','blau')
+and lstadt = 'Ludwigshafen';
+
+-- Joins eignen sich hervorragend fuer Unterabfragen in der
+-- FROM -Klausel
+
+-- Nummern, Namen und Anzahl ihrer Lieferungen fuer alle Lieferanten
+-- die  mindestens 2x geliefert haben
+
+select a.lnr, lname, anz as [Anzahl Lieferung]
+from lieferant as a join (select lnr, count(*) as [anz]
+                          from lieferung
+                          group by lnr) as b on a.lnr = b.lnr
+where anz >= 2;
+
+-- 1. korrelierende Unterabfrage 
+
+select lnr, lname
+from lieferant
+where exists (select *
+               from lieferung
+               where lieferant.lnr = lieferung.lnr);    --langsam
+
+-- 2. einfache Unterabfrage 
+
+select lnr, lname
+from lieferant
+where lnr in (select lnr from lieferung);               --schneller
+
+-- 3. Join Abfrage 
+
+select distinct a.lnr, lname
+from lieferant as a join 
+lieferung as b on a.lnr = b.lnr;                        --am schnellsten
+
+-------
+
+-- hinter jedem Join steht ein kartesisches Produkt
+-- darum ist folgende Anweisung falsch!
+
+-- die Nummern und Namen der Lieferanten die noch nie geliefert haben
+
+select distinct a.lnr, lname
+from lieferant as a join 
+lieferung as b on a.lnr <> b.lnr;           -- falsches Ergebnis
+
+-- bei naeherer Betrachtung enthaelt das Ergebnis 48 DS, 60 DS des
+-- kartesischen Produktes minus 12 DS die logisch zusammen gehoeren
+
+select * 
+from lieferant as a join lieferung as b
+    on a.lnr <> b.lnr
+
+-- die oben genannte Fragestellung kann man trotzdem mit
+-- einem JOIN beantworten
+
+-- es wird ein OUTER Join benoetigt- --> die Fragestellung wird etwas spaeter
+-- wieder aufgenommen
+
+-- aufnehmen eines Testdatensatz --> eine Lieferung fuer die es keinen
+-- Lieferanten gibt
+-- das laesst das Datenbanksystem micht zu --> referentielle Integritaet
+-- darum muessen wir tricksen
+
+alter table lieferung drop constraint lnr_fs;
+go 
+
+insert into lieferung values('L33','A05',500,getdate());
+go 
+
+alter table lieferung with nocheck
+add constraint lnr_fs foreign key(lnr) references lieferant(lnr);
+go
+
+-------
+
+-- linker OUTER Join
+
+-- gesucht sind alle Lieferanten mit ihren Lieferungen und auch die
+-- Lieferanten die noch nicht geliefert haben
+
+select *
+from lieferant as a left join lieferung as b on a.lnr = b.lnr
+
+-- rechter OUTER Join
+
+-- gesucht sind alle Lieferanten mit ihren Lieferungen und die
+-- Lieferungen denen kein Lieferant zugeordnet werden kann
+
+select *
+from lieferant as a right join lieferung as b on a.lnr = b.lnr
+
+-- voller OUTER Join
+
+-- gesucht sind alle Lieferanten mit ihren Lieferungen, weiterhin 
+-- die Lieferanten die noch nicht geliefert haben und die
+-- Lieferungen denen kein Lieferant zugeordnet werden kann
+
+select *
+from lieferant as a full join lieferung as b on a.lnr = b.lnr
+
+-- also zurueck zur Frage: Nummern und Namen der Lieferanten 
+-- die noch nicht  geliefert haben
+
+select a.lnr,lname
+from lieferant as a left join lieferung as b on a.lnr = b.lnr
+where b.lnr is null;
