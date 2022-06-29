@@ -1,0 +1,152 @@
+/*
+
+Administration SQL Server 2016 - Sicherheit
+
+Sie sind Datenbankadministrator im Verwaltungsbereich einer Supermarktkette und haben die
+Aufgabe die Sicherheit fuer den Datenbankserver SQL Server 2016 zu ueberarbeiten.
+
+Alle Mitarbeiter, ausser Mitarbeiter im Aussendienst und Kunden, melden sich an der Domaene
+des Unternehmens an. Die neu erstellte Datenbank Donnerstag (Skript ist in ihrem Ordner
+DATENAUSTAUSCH\ SQL befindet sich auf einem Server mit dem Namen Ihrer
+Standardinstanz und unterstuetzt die Moeglichkeiten von Schemas. Die Tabellen Lieferant und
+Artikel befinden sich im Schema Office und die Tabelle Lieferung im Schema Stock.
+
+Sie selbst haben in der Domaene keine Administrativen Berechtigungen vom
+Netzwerkadministrator zugewiesen bekommen, besitzen aber ein Login mit Ihrem Namen (in
+unserem Fall "Student") in der Domaene und Sie sind lokaler Administrator auf dem Server auf
+dem SQL Server installiert ist. Ihnen ist das SA- Passwort bekannt und die Instanz von SQL
+Server verwendet die "gemischte Authentifizierung". Eine Sicherheitsrichtlinie im
+Unternehmen legt fest, dass alle administrativen Arbeiten unter Ihrem Login und als
+SYSADMIN nachvollziehbar sein muessen. Stellen Sie daher sicher dass Sie an der Instanz von
+SQL Server als Systemadministrator arbeiten koennen (da Sie das schon sind schreiben Sie nur
+die entsprechende Anweisung auf).
+
+Mitarbeiter Ralf, Ihr Stellvertreter wenn Sie im Urlaub oder krank sind, muss in der Lage sein
+vorhandene Datenbanken aendern, vergroessern, sichern und wiederherstellen zu koennen. Er
+muss ausserdem neue Datenbanken erstellen koennen. Weiterhin muss er die Sicherheit in der
+Instanz vollstaendig verwalten koennen. In den vorhandenen Benutzer Datenbanken (Standard
+und Donnerstag) arbeitet er als Datenbankbesitzer.
+
+Im Unternehmen gibt es drei Abteilungen: Office, Purchase und Customer Service.
+In der Abteilung "Office" arbeiten vier Mitarbeiter: Kerstin Ziegler, Andrea Fischer, Steffen
+Drosten und Diana Reichenbach.
+In der Abteilung "Customer Service" arbeiten drei Mitarbeiter: Bernd Albrecht, Petra Gutheil,
+Albert Ross sowie zwei Azubis Matthias Neuer und Maik Alter.
+In der Abteilung "Purchase" arbeiten zwei Mitarbeiter: Jessica Otto und Ute Sitte.
+Im Unternehmen sind vier Aussendienstmitarbeiter beschaeftigt: Dieter Acksteiner, Steffi
+Reichardt, Anke Grohall und Olaf Schroeter. Diese verbinden sich unregelmaessig mit dem SQL
+Server, in der Regel ueber Einwahlpunkte ausserhalb Ihrer Domaene.
+
+In der Windowsdomaene existieren gleichnamige Windowsgruppen wie die Abteilungen, denen
+die Mitarbeiter der jeweiligen Abteilung zugeordnet sind.
+
+Der Lehrling darf nicht auf die produktive Datenbank Donnerstag und Standard zugreifen, soll
+sich aber im Rahmen seiner Ausbildung mit SQL Server 2016 vertraut machen. Sie erstellen
+ihm eine Datenbank "Uebung" und zwei Testanmeldungen willi1 und willi2. Diese Logins soll
+er selbst als Datenbankbenutzer in der Datenbank "Uebung" einrichten koennen. Er sollte in die
+Lage sein alle Datenbankobjekte in der Datenbank Uebung selbst zu erstellen. Er muss auch
+mit den Prozeduren (voller Umfang) von Database Email arbeiten kann.
+
+Alle Mitarbeiter der Firma muessen sich mit der Datenbank Donnerstag verbinden koennen. Die
+Mitarbeiter der Abteilung Office besitzen auf die Tabellen Lieferant und Artikel die
+
+Administration SQL Server 2016
+Berechtigungen insert, update, delete und select. Auf die Tabelle Lieferung duerfen sie nur
+lesend zugreifen.
+
+Die Mitarbeiter der Abteilung Customer Service haben Zugriff, select, insert, update, auf die
+Tabelle Lieferung, Sie duerfen aber keine Lieferungen loeschen.
+
+Die Mitarbeiter der Abteilung Purchase muessen neue Artikel aufnehmen koennen, Artikel
+aendern koennen und auf alle anderen Tabellen der Datenbank einschliesslich Artikel lesend
+zugreifen koennen. Sie muessen weiterhin in die Lage versetzt werden, selbst Sichten zu
+erstellen die lesend auf die Tabellen Lieferant und Lieferung zugreifen koennen.
+
+Die Mitarbeiterin Kerstin soll Objekte in der Datenbank aendern koennen und gegebenenfalls
+neue Objekte (Tabellen, View, Prozeduren, Funktionen) erstellen. Sie darf aber keine
+Datenbanken erstellen oder loeschen duerfen. Weiterhin soll sie alle Anmeldungen an die
+Datenbank verwalten koennen.
+
+Die Aussendienstmitarbeiter sollen auf die Tabelle Lieferant Datensaetze lesen, einfuegen und
+aendern koennen und Vollzugriff (Insert, Update, Delete, Select) auf die Tabelle Artikel besitzen
+sowie lesenden Zugriff auf die Tabelle Lieferung.
+
+Ihre Aufgabe ist es die obenstehende Aufgabe durchzusetzen und in einem Skript fuer das
+Serverlogbuch darzustellen.
+
+Speichern Sie Ihre Skripte in der Freigabe "Datenaustausch\SQL\Berechtigungen" ab. 
+Im Dateinamen sollte klar Ihr Name zu erkennen sein.
+
+Mein Vorschlag:
+
+ersterbuchstabevorname_nachname_zugriff.sql
+
+Ich wuensche Ihnen viel Erfolg
+
+*/
+
+Loesung
+
+use master;
+go
+
+-- Uberprüfen ob ich Systemadmin bin --
+
+select a.role_principal_id, b.name as [Rollenname], a.member_principal_id,
+							c.name as [Mitgliedsname]
+from sys.server_role_members as a join sys.server_principals as b
+on a.role_principal_id = b.principal_id
+join sys.server_principals as c
+on a.member_principal_id = c.principal_id;
+
+-- Wenn das nicht der Fall ist: Verbinden mit den 5Qt Server als SA --
+
+alter server role sysadmin add member [sql16\student];
+
+-- Danach wieder als Student mit dem 5QL Server verbinden --
+
+--Test- Datenbank und Test- Logins für den Lehrling erstellen:
+
+create database uebung;
+
+go
+create login willi1 with password = 'Pa$Sw0rd';
+create login willi2 with password = 'Pa$Sw0rd';
+go
+
+-- Login und Serverberechtigungen für den Stellvertreter --
+
+create login [sql16\ralf] from windows;
+alter server role dbcreator add member [sql16 \ralf];
+alter server role diskadmin add member [sql16iralf];
+alter server role securityadmin add member [sql16\ralf];
+
+-- Datenbankrollen für den Stellvertreter --
+use standard;
+go
+
+create user ralf for login [sql16\ralf];
+alter role db_owner add member ralf
+
+use urbiworks;
+go
+
+create user ralf for login [sql16\ralf];
+alter role db_owner add member ralf;
+go
+
+use master;
+
+-- Logins für die Abteilungen erstellen --
+
+create login [sqll6\office] from windows;
+create login [sql16\custumer _service] from windows;
+create login [sql16\Purchase] from windows;
+
+-- Logins für Außendienstmitarbeiter --
+
+create login Acksteiner with password = 'Pa$$w0rd';
+create login Reichardt with password = 'Pa$$w0rd';
+create login Grohall with password = 'Pa$$w0rd';
+create login Schröter with password = 'Pa$$w0rd';
+go
