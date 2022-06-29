@@ -1,0 +1,90 @@
+-- Installieren von SQL Server --
+
+-- das Produkt ist in der Express, Standart, Developer und Evaluierungsedition
+-- erhaeltlich
+
+-- die express Edition ist kostenfrei
+-- es gibt Einschränkungen in der Groesse
+-- der Datenbanbkdateien und es gibt
+-- keine Moeglichkeit der hohen Verfügbarkeit, der
+-- Automatisierung und der Ueberwachung
+
+-- die Evaluierungsversion entspricht der Enterprise Edition
+-- alle Funktionen sind verfügbar
+-- laeuft in der Regel nach 100 Tagen ab
+
+-- die Developer Edition entspricht der Microsoft
+-- Edition, darf aber nur fuer die Entwicklung eingesetzt
+-- werden
+
+-- die Standard Edition unterstuetzt nicht alle 
+-- Funktionen der hohen Verfügbarkeit und des Audit
+
+-- SQL Server unterstuetzt RAID 1, RAID 5, RAID 10
+
+-- arbeiten mit dezidierten Platten --> Datendateien und
+-- Protokolldateien niemals auf ein Device
+
+-- die Dienstkonten sollten nicht die lokalen (vorinstallierten) sein
+-- auch wenn der SQL Server auf einem lokalen (ohne Domäne) Rechner installiert wird 
+-- sollten Konten erstellt werden mit einem sicheren Kennwort
+
+-- installieren sie nur die Dienste die sie umbedingt benoetigen
+
+-- wir wollen den SQL Server 2016 Enterprise Edition ohne grafische Oberflaeche installieren
+-- es ist jeweils ein Device fuer die Datenbankdateien und die Datenbankprotokolldateien
+-- vorhanden, das gleiche gilt fuer die TEMPDB
+
+use master
+go
+
+-- Datenbanken erstellen und Verwalten
+
+-- Typen
+-- Systemdatenbanken (master, msdb, tempdb, model, distribution)
+
+
+-- Transaktion ist eine unteilbare Einheit die entweder ganz oder
+-- ganz garnicht ausgeführt wird
+
+-- Beispiel: der Herr Beinlich hat für den Herrn Donath
+--				ein Programm geschrieben für das Homebanking
+--				Herr Donath will 5000 Euro von seinem Girokonto
+--				auf sein Sparkonto ueberweisen
+
+-- Datenbank erstellen
+
+create database standard;
+go
+
+exec sp_helpdb standard;
+
+create table lieferant
+(
+lnr char(3) not null, 
+lname nvarchar(200) not null,
+status tinyint null,
+lstadt nvarchar(200) null
+);
+go
+
+
+create table artikel
+(
+anr char(3) not null,
+aname varchar(200) not null,
+farbe varchar(10) null,
+gewicht decimal(5,2) null,
+astadt nvarchar(200) not null,
+amenge int not null
+);
+go
+
+create table lieferung
+(
+lnr nchar(3) not null, 
+anr nchar(3) not null, 
+lmenge int not null,
+ldatum datetime not null
+);
+go
