@@ -1,0 +1,151 @@
+  --pruefen mit
+
+ select * from lieferant
+
+ -- Daten bearbeiten
+
+ -- Insert
+
+ -- Einen Datensatz in eine Tabelle einfuegen
+
+ -- 1. in der Reihenfoolge der Tabellendefinition
+
+ insert into lieferant values('L20','Krause',5,'Erfurt');
+
+ -- 2. geaenderte Reihenfolge
+
+ insert into lieferant(lstadt,lnr,status,lname) values('Weimar','L21',5,'Schulze');
+
+ insert into lieferant values('Erfurt','L22','Krause',5,) -- Fehler
+
+ -- 3. unbekannte Werte
+
+ insert into lieferant values('L22','Maria',5,null);
+
+ insert into lieferant (lnr,lname) values('L23','Horst');
+
+ -- das geht nur wenn fuer alle Spalten die nicht ausgegeben werden, NULL
+ -- Marken zugelassen sind
+
+ -- BLOB laden (binary large objects)
+
+ create table medien 
+ (nr int not null,
+ bild varbinary(max) null,
+ typ varchar(5) null);
+
+ -- pruefen
+
+ select * from medien
+
+insert into medien values
+(1,(select * from openrowset(bulk 'c:\xml\colonel.jpg', single_blob) as c), '.jpg');
+
+-- weiter Moeglichkeiten zum Massenladen
+
+select *
+into lieferung_hist
+from lieferung;
+
+insert into lieferung_hist select * from lieferung;
+
+--pruefen mit
+
+select * from lieferung_hist
+
+-- Datenaenderung mitschneiden
+
+create table spion
+(lfdnr int,
+wann datetime,
+wer sysname,
+was varchar(20),
+primaerschluessel char(3),
+neuer_wert char(100),
+alter_wert char(100));
+
+insert into lieferant
+output 1,getdate(),suser_name(),'Insert', inserted.lnr, inserted.lnr, null
+       into spion
+values('L24','Boomer',5,'Weimar')
+
+-- pruefen mit
+
+select * from spion
+
+-- aendern der Daten
+
+-- Daten werden geaendert mit der UPDATE Anweisung wenn
+-- ein oder mehrere Spaltenwerte einer oder mehrerer Datensaetze
+-- geaendert werden
+
+-- eine Update - Anweisung ohne where Klausel macht keinen Sinn
+
+-- die Maria zieht nach Gotha
+
+update lieferant
+set lstadt = 'Gotha'
+where lnr = 'L22';
+
+-- der Status der Lieferanten die mehr als zwei mal geliefert haben 
+-- soll um 5 Punkte erhoeht werden
+
+update lieferant
+set status = status + 5
+where lnr in(select lnr
+             from lieferung
+             group by lnr
+             having count(lnr) > 2);
+
+-- mit Output arbeiten
+
+-- bei einer Update Anweisung werden 2 logische Tabellen gebildet
+-- inserted --> mit dem neuen geaenderten Wert
+-- deleted --> mit alten ungeaenderten Wert
+
+-- der Lieferant L23 zieht nach Urbich (weil Weltstadt)
+
+update lieferant
+set lstadt = 'Urbich'
+output 2, getdate(), suser_name(), 'Update', 
+        inserted.lnr, inserted.lstadt, deleted.lstadt
+into spion
+where lnr = 'L23';
+
+-- pruefen mit
+
+select * from spion
+
+-- der Lieferant 23 zieht ploetzlich nach Dittelstedt
+
+update lieferant
+set lstadt = 'Dittelstedt'
+output 3, getdate(), suser_name(), 'Update', 
+        inserted.lnr, inserted.lstadt, deleted.lstadt
+into spion
+where lnr = 'L23';
+
+-- DELETE
+
+-- loescht einen oder mehrere Datensaetze
+-- sollte nicht ohne where Klausel verwendet werden
+
+-- L23 verlaesst fluchtartig die Firma
+
+delete lieferant
+output 4, getdate(),suser_name(),'Delete',deleted.lnr,null,deleted.lnr
+into spion
+where lnr= 'L23'
+
+-- Alle Lieferanten ausser L05, die nicht geliefert haben sollen gloescht 
+-- werden
+
+delete lieferant
+where lnr not in (select lnr from lieferung)
+and lnr <> 'L05';
+
+-- Loeschen von Datensaetzen einer Tabelle ohne Protokolierung
+
+truncate table lieferung;
+
+select * from lieferant
