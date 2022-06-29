@@ -1,0 +1,124 @@
+use standard
+go
+
+/*
+
+SQL Server
+
+21. Juni 2022
+
+Aufgabe
+
+Schreiben Sie eine gespeicherte Prozedur welche den Fragmentierungsgrad der
+Indizes, der Tabellen der Datenbank Standard, überprüft und die Indizes bei Bedarf
+defragmentiert.
+Der Prozedur soll der Name der Tabelle und der Name eines Indexs übergeben
+werden. Der Name der Tabelle muss auf jeden Fall der Prozedur übergeben werden,
+der Indexname ist eine optionale Eingabe.
+Wird der Prozedur kein Indexname übergeben muss jeder Index der angegebenen
+Tabelle auf Fragmentierung überprüft werden und bei einem festgestellten
+Fragmentierungsgrad entsprechend behandelt werden.
+Wird ein Indexname angegeben dann soll nur dieser spezielle Index auf
+Fragmentierung überprüft werden und entsprechend behandelt werden.
+Es gilt, ist der Fragmentierungsgrad unter 8% soll mit dem Index nichts passieren. Ist
+der Fragmentierungsgrad zwischen 8% und 30% (Grenzen einschließlich) soll der
+Index reorganisiert werden.
+Liegt der Fragmentierungsgrad über 30% soll der Index neu gebildet werden.
+
+Je nachdem was die Prozedur für dem jeweiligen Index macht (Nichts, Reorganisieren
+oder Neu bilden), soll eine entsprechende Raiserror- Meldung (Schweregrad 10) für
+den Anwender der Prozedur generiert werden. Außerdem soll die Prozedur über eine
+geeignete Parameter- und Fehlerüberprüfung verfügen,
+
+Speichern Sie die fertige Prozedur im Datenaustausch, Ordner "SQL", Unterordner
+"Prozedur Indexdefrag" mit der Namenskonvention <Proz Ihr_ Name>.sql ab.
+Ich wünsche Ihnen viel Erfolg.
+
+*/
+
+-- Prozedur Index Defragmentieren.sql
+
+use standard;
+go
+create procedure ind_defr @tab nvarchar(200), @ind varchar(200) = null
+as
+declare @obj_id int, @ind_id int, @ind_name nvarchar(200)
+
+if not exists(select * from sys.objects where object_id = object_id(@tab))
+	begin
+		raiserror('Die Tabelle %s gibt es nicht in der Datenbank.',10,1,@tab)
+		return
+	end
+if @ind is null
+	begin
+		declare tab_ind cursor for
+		select object_id, index_id, name from sys.indexes where object_id = object_id(@tab)
+		open tab_ind
+		fetch tab_ind into @obj_id, @ind_id, @ind_name
+		while @@fetch_status = 0
+			begin
+					if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null)) < 13
+				begin
+					raiserror ('Index %s nicht fragmentiert.',10,1,@ind_name)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null))between 13 and 30
+				begin
+					execute ('alter index ' + @ind_name + ' on ' + @tab + ' reorganize;')
+					raiserror ('Index %s ist leicht fragmentiert. er wurde reorganisiert',10,1,@ind_name)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null)) > 30
+				begin
+					execute ('alter index' + @ind_name + ' on ' + @tab + ' rebuild;')
+					raiserror('Index %s ist stark fragmentiert. er wurde neu gebildet',10,1, @ind_name)
+				end
+				fetch tab_ind into @obj_id, @ind_id, @ind_name
+	end
+		deallocate tab_ind
+end
+if @ind is not null
+	begin
+		if not exists (select * from sys.indexes where name = @ind)
+		begin
+			raiserror ('Einen index mit dem namen %s gibt es nicht.',10,1,@ind)
+			return
+		end
+			else
+				begin
+					select @ind_id = index_id from sys.indexes where name = @ind
+					if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id,null,null)) < 13
+				begin
+					raiserror ('Index %s nicht fragmentiert.',10,1,@ind)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats (db_id(), object_id(@tab),@ind_id, null,null)) between 13 and 30
+				begin
+					execute ('alter index ' + @ind + ' on ' + @tab + ' reorganize;')
+					raiserror ('Index %s ist leicht fragmentiert. er wurde reorganisiert',10,1,@ind)
+				end
+				if (select avg_fragmentation_in_percent
+					from sys.dm_db_index_physical_stats(db_id(),object_id(@tab),@ind_id, null,null)) > 30
+				begin				
+					execute ('alter index ' + @ind + ' on ' + @tab + ' rebuild;')
+					raiserror ('Index %s ist stark fragmentiert. er wurde neu gebildet',10,1,@ind)
+				end
+		end	
+	end
+go
+
+
+-- pruefen mit
+
+exec ind_defr;
+
+exec ind_defr Artikel;
+
+exec ind_defr Artikel, anr_ps;
+
+-- Prozedur loeschen
+
+drop procedure [ind_defr];  
+go  
