@@ -1,0 +1,246 @@
+use standard
+go
+
+-- Datenbankschemas erstellen
+
+create schema lager;
+go
+create schema verkauf;
+go
+
+-- Datenbank Tabellen den jeweiligen Schemas zuordnen
+
+alter schema lager transfer dbo.artikel;
+go
+alter schema verkauf transfer dbo.lieferant;
+go
+alter schema verkauf transfer dbo.lieferung;
+go
+
+-- Was ist passiert?
+
+select * from artikel;			-- dieser Zugriff geht nicht mehr
+select * from lager.artikel;	-- funktioniert
+
+-- wenn diese Anweisung geht, dann wurden die Fremdschluessel im
+-- Hintergrund richtig umgeschrieben
+
+insert into verkauf.lieferung values('L04','A03',500,getdate());
+go
+
+------
+
+-- Berechtigungsverewaltung an Datenbanksystemen speziell am SQL Server
+
+-- die Verwaltung von Berechtigungen erfolt auf drei Ebenen
+-- 1. Serverebene (Instanzebene)
+-- 2. Datenbankebene
+-- 3. Object oder Schemaebene
+
+-- Logins einreichten
+-- Es gibt zwei Arten der Authentifizierung
+
+-- Windows Authentifizierung
+-- wird verwendet fuer Benutzer (Windowsuser, Windowsgruppen oder Anwendungen)
+-- die in der gleichen Domaene arbeiten wie SQL Server
+-- es wird nur der Benutzernmame des Logins gespeichert und nicht das Password
+-- beim Password vertraut SQL Server dem Active Directorie
+
+-- SQL Server Authentifizierung
+-- wird verwendet fuer Logins die sich von ausserhalb der Domaene mit dem
+-- SQL Server verbinden muessen
+
+-- die Instanz von SQLServer arbeitet in zwei Modis.
+--	1. Nur Windowsauthentifizierung
+--	2. gemischte Authentifizierung
+--	   dieser Modus kann grafisch oder mit der Prozedur sp_configure festgelegt werden
+--     Achtung, danach muss da DBMS gestartet werden
+
+
+use master;
+go
+
+
+-- Windows Authentifizierung
+
+create login [sql16\verwaltung] from windows;
+go
+create login [sql16\material] from windows;
+go
+create login [sql16\diana] from windows;
+go
+
+-- der Benutzer Horst darf sich nie mit dem SQL Server verbinden
+-- Horst ist Mitglied der Windowsgruppe 'verwaltung' und diese Gruppe
+-- hat einen Login in der SQL Server Instanz. Damit hat Horst automatisch
+-- auch einen Login.
+-- Problemloesung
+
+-- Horst Login erstellen
+
+create login [sql16\horst] from windows;
+go
+
+-- und Zugriff verweigern
+
+deny connect sql to [sql16\horst];
+go
+
+-- SQL Server Logins
+
+create login [Frank] with Password = 'Pa$$w0rd';
+go
+create login [Dieter] with Password = 'Pa$$w0rd';
+go
+
+-- Erstellen von Serverrollen, zuweisen von Serverberechtigungen
+-- arbeit mit festen Serverrollen
+
+-- Diana soll Sysadmin werden
+
+alter server role sysadmin add member [sql16\diana];
+
+-- erstellen einer benutzerdefinierten Serverrolle
+
+create server role useredit;
+go
+
+
+-- Mitglieder der Rolle sollen logins bearbeiten koennen
+
+grant alter any login to useredit;
+go
+
+-- der Rolle sollen die Benutzer der Windowsrolle Verwaltung zugewiesen werden
+
+alter server role useredit add member [sql16\Verwaltung];
+go
+
+-- weitere Berechtigung fuer die Serverrolle useredit
+
+
+grant alter any credential to [useredit]
+go
+
+----------
+
+-- 2.Ebene Datenbank 
+
+-- Datenbankbenutzer einrichten
+
+use standard;
+go
+
+/*
+die logins Verwaltung, Material, Frank und Dieter sollen sich mit der 
+Datenbank Standard verbinden duerfen
+*/
+
+create user verwaltung from login [sql16\verwaltung];
+go
+
+-- Standardschema fuer den Datenbankbenutzer Verwaltung festlegen
+
+alter user verwaltung with default_schema = verkauf;
+go
+
+create user material from login [sql16\material]
+with default_schema = lager;
+go
+
+/*
+Karl ist Lehrling und darf sich nicht mit der Datenbank Standard verbinden
+fuer ihn wird eine Trainingsdatenbank ertstellt in der er DBO ist.
+Weiterhin werden 2 Logins (Willi1 und Willi2) bereitgestellt denen er in der 
+Trainingsdatenbank Berechtigungen erteilen kann.
+*/
+
+-- master
+
+use master
+go
+
+create login willi1 with password = 'Pa$$w0rd';
+go
+create login willi2 with password = 'Pa$$w0rd';
+go
+create database training;
+go
+
+-- Karl den Datenbankzugriff auf standard verbieten und den 
+-- Zugriff auf Training erlauben
+
+-- standard
+
+use standard;
+go
+
+create user karl from login [sql16\karl];
+go
+deny connect to karl;
+go
+
+-- training
+
+use training;
+go
+
+create user karl from login [sql16\karl];
+go
+alter role db_owner add member karl;
+go
+
+use standard;
+go
+
+-- benutzerdefinierte Datenbankrolle erstellen
+
+create role dbconfig;
+go
+
+-- Berechtigungen zuweisen
+
+grant create view to dbconfig;
+go
+
+alter role dbconfig add member material;
+
+--------
+
+create user frank from login frank;
+go
+
+create user dieter from login dieter;
+go
+
+--------
+
+-- 3. Ebene -- Datenbankobjekte
+
+-- Frank und Dieter sollen SELECT, UPDATE und INSERT Berechtigungen
+-- auf die Tabellen Lieferant und Lieferung im Schema  Verkauf erhalten
+
+grant insert, update, select
+on schema::verkauf
+to frank;
+
+grant insert, update, select
+on schema::verkauf
+to dieter;
+
+-- Delete fuer die Tabelle Lieferung fuer Frank und Dieter erlauben
+
+grant delete
+on verkauf.lieferung
+to dieter;
+
+-- den Mitarbeitern von Verwaltung alle Rechte auf die Tabellen
+-- Lieferant, Artikel und Lieferung zuweisen
+
+grant insert, update, select, delete
+on schema::verkauf
+to verwaltung;
+
+grant insert, update, select, delete
+on schema::lager
+to verwaltung;
