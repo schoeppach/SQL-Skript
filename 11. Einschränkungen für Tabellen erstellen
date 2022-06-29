@@ -1,0 +1,173 @@
+-- Einschränkungen für Tabellen erstellen
+-- primary key, unique, foreign key, default, check
+-- sie dienen dazu Integritätsbedingungen innerhalb der
+-- Datenbank durchzusetzen
+-- diese Einschränkungen koennen für Tabellen mit und ohne DS erstellt
+-- werden
+-- sind in den Tabellen bereits Datensaetze enthalten, dann müssen sie
+-- die Einschränkung erfüllen 
+
+-- einige Einschraenkungen (primary key, unique) erzeugen Indizes
+
+-- Primaerschluessel
+
+alter table lieferant add constraint lnr_pk primary key(lnr);
+ 
+-- pruefen mit
+
+exec sp_help 'lieferant'
+
+-- standardmaessig erzeugt der Primaerschluessel einen clustered 
+-- (gruppierten) Index
+
+-- Test
+
+insert into lieferant values('L01','Kummer',5,'Erfurt'); -- L01 vorhanden
+insert into lieferant values('L06','Kummer',5,'Erfurt',0); -- geht
+
+-- Unique (Vorbereitung)
+
+alter table lieferant add vers_nr varchar(20) null;
+
+update lieferant set vers_nr = 'ABC-12345-CC' where lnr = 'L01';
+update lieferant set vers_nr = 'DEF-12345-CC' where lnr = 'L02';
+update lieferant set vers_nr = 'GHI-12345-CC' where lnr = 'L03';
+update lieferant set vers_nr = 'JKL-12345-CC' where lnr = 'L04';
+update lieferant set vers_nr = 'MNO-12345-CC' where lnr = 'L05';
+update lieferant set vers_nr = 'MNO-12345-CC' where lnr = 'L06';
+
+alter table lieferant add consraint versnr_unq unique(vers_nr)
+
+-- Test 
+
+insert into lieferant values ('L07','Jach',5,'Erfurt','ABC-12345-CC') -- Fehler
+insert into lieferant values ('L07','Jach',5,'Erfurt','QRS-12345-CC'); -- geht
+
+-- fuer eine Tabelle kann es mehr als eine Unique Einschraenkung geben
+-- Unique laesst null Marken zu ( nur eine )
+-- Unique erstellt standardmaessig einen nonclustered Index
+
+-------
+
+-- Spalte vers_nr loeschen
+-- 1. das Constraint loeschen
+
+alter table lieferant drop constraint versnr_unq;
+
+-- 2. Tabellenspalten loeschen
+
+alter table lieferant drop drop column vers_nr;
+
+-- Default
+-- wenn fuer eine Spalte kein Wert angegeben wird soll ein Defaultwert gelten.
+-- auf Primaerschluesselspalten werden keine Default erstellt
+
+alter table lieferant add constraint lstadt_def default 'Gotha' for lstadt;
+
+-- test
+
+insert into lieferant values ('L06','Kulesch',5, default);
+insert into lieferant (lnr,lname,status) values ('L08','Schoeppach',5);
+
+
+exec sp_help 'lieferant'
+select * from lieferant
+
+-- wenn eine NULL Marke aufgenommen werden muss, dann muessen sie diese
+-- explizit angegeben werden
+
+insert into lieferant values ('L09','Warnecke',5, null);
+
+-- Check Einschränkung
+
+-- mit dieser Einschraenkung kenne gültige Werte fuer eine Tabellenspalte 
+-- festgelegt werden
+-- pro Spalte kann es keine, eine oder mehrere Check Einschraenkungen geben
+--		      sie sollten sich nicht gegenseitig blockieren oder aufheben
+-- Check Einschraenkungen koennen sich auch auf andere Spalten der Tabelle 
+-- beziehen Beispiel: im Datensatz befindet sich ein Wert 'Name' und 'Vorname'
+--		      es soll sichergestellt werden, dass wenn nur der Vorname 
+--                    angegeben wurde, das Einfuegen des DS abgewiesen wird
+
+
+-- Lieferantennamen sollen mit einem Buchstaben beginnen
+
+alter table lieferant add constraint lname_chk check(lname like '[A-Z]%');
+
+insert into lieferant values ('L10','8Sell',5, Jena); -- Fehler Name beginnt mit Zahl
+
+insert into lieferant values ('L10','Sell',15, default);
+
+-- der Statuswert darf nur zwischen 0 und 100 liegen
+ 
+ alter table lieferant add constraint status_chk check(status between 0 and 100);
+
+insert into lieferant values ('L11','Sell',105,'Erfurt');  -- Fehler
+
+insert into lieferant values ('L11','Sell',99,'Erfurt');
+
+
+-- Fremdschluessel ( foreign key)
+
+alter table lieferung add constraint lnr_fk foreign key(lnr) 
+						  references lieferant(lnr)
+						  on update cascade;
+
+alter table lieferung add constraint anr_fk foreign key(anr) 
+						  references artikel(anr);  
+                                                 
+                                                  -- erzeugt einen Fehler weil
+						  -- die Tabelle Artikel
+						  -- noch keinen Primaerschluessel
+						  -- besitzt
+
+alter table artikel add constraint anr_pk primary key(anr);	
+
+
+alter table lieferung add constraint anr_fk foreign key(anr)
+					  references artikel(anr);	    
+                                          
+                                                  -- jetzt sollte es gehen
+
+
+-- Primaerschluessel fuer die Tabelle Lieferung
+
+-- zusammengesetzter Primaerschluessel aus dem Spalten lnr, anr, ldatum
+
+alter table lieferung add constraint lief_pk primary key(lnr,anr,ldatum);
+
+--  Beispiel fuer referentielle Integritaet (hat was mit dem foreign key zu tun)
+
+insert into lieferung values('L44','A02',500, GETDATE());
+
+--	Fehler wegen referentieller Integritaet, den Lieferanten L44
+--	gibt es nicht !!!
+
+-- Opertationregel kaskadierndes aendern zwischen Lieferant und Lieferung
+
+select * from lieferant as a join lieferung as b on a.lnr = b.lnr
+where a.lnr = 'L04';
+
+update lieferant set lnr = 'L06' where lnr = 'L04';
+
+select * from lieferant as a join lieferung as b on a.lnr = b.lnr
+where a.lnr = 'L04';		
+                                -- leer weil L04 nicht mehr vorhanden
+
+select * from lieferant as a join lieferung as b on a.lnr = b.lnr
+where a.lnr = 'L06';		
+                                -- dem Liefranten wurde die lnr
+				-- geaendert und seine Lieferungen wurden
+				-- ihm wieder zugeordnet
+
+
+exec sp_help 'lieferant'
+select * from lieferant
+delete lieferant
+where lnr = 'L11'
+
+
+alter table lieferung drop constraint lief_pk;
+
+alter table lieferung alter column lnr char(3) not null;
+alter table lieferung alter column anr char(3) not null;
