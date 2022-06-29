@@ -1,0 +1,240 @@
+CUBE und ROLLUP
+
+insert into lieferung values('L04', 'A03', 500, '10.06.2021');
+insert into lieferung values('L04', 'A02', 500, '20.06.2021');
+insert into lieferung values('L04', 'A01', 500, '01.06.2022');
+insert into lieferung values('L04', 'A03', 500, CONVERT(char(10),GETDATE(),104));
+
+select *
+from lieferung
+
+-- CUBE und ROLLUP
+-- ermoeglichen zusammen mit Aggregatfunktionen erweiterte Zusammenfassungswerte
+-- die Funktionen werden in der group by-Klausel verwendet
+
+-- die Lieferantennummer, der Monat der Lieferung , das Jahr der Lieferung und
+-- die Gesamtliefermenge aller Lieferanten mit einer Liefermenge
+-- von mind. 100 Stueck
+
+select lnr, datename(mm,ldatum) as [Monat], datepart(yyyy,ldatum) as [Jahr],
+sum(lmenge) as [Gesamtliefermenge]
+from lieferung
+where lmenge >= 100
+group by lnr, datename(mm,ldatum), datepart(yyyy,ldatum);
+
+-- Da wir ein sehr grosses Gruppenbildungsmerkmal verwenden muessen
+-- Ergebniss wenig aussagekraeftig
+--          eine Gesamtliefermenge ueber alle Lieferungen
+--          eine Gesamtliefermenge fuer jeden Lieferanten
+--          eine Gesamtliefermenge fuer jeden Lieferanten im jeweiligen Monat
+--          eine Gesamtliefermenge fuer jeden Lieferanten im jeweiligen Monat und Jahr
+
+select lnr, datename(mm,ldatum) as [Monat], datepart(yyyy,ldatum) as [Jahr],
+sum(lmenge) as [Gesamtliefermenge]
+from lieferung
+where lmenge >= 100
+group by rollup (lnr, datename(mm,ldatum), datepart(yyyy,ldatum))
+order by 1,2,3;
+
+-	uebertreiben -- weiter Zwischenaggragate
+
+select lnr, datename(mm,ldatum) as [Monat], datepart(yyyy,ldatum) as [Jahr],
+sum(lmenge) as [Gesamtliefermenge]
+from lieferung
+where lmenge >= 100
+group by cube (lnr, datename(mm,ldatum), datepart(yyyy,ldatum))
+order by 1,2,3;
+
+-- loeschen
+
+delete lieferung where lmenge = 500
+
+-- pruefen
+
+select * from lieferung
+
+-- Rangfolgefuntionen
+--      RANK    
+--      DENSE-RANK
+--      ROW_NUMBER
+
+-- RANK 
+
+-- Rangfolge der Lieferanten anhand ihrer Gesamtlieferungen
+
+select lnr, rank() over(order by sum(lmenge) desc) as [Rang], sum(lmenge)
+        as [Gesamtliefermenge]
+from lieferung
+group by lnr;
+
+insert into lieferung values('L02','A04',200,'03.06.2022');
+
+-- bei gleicher Rangfolge ensteht in der Spalte Rang eine Luecke.
+
+-- DENSE_RANK
+
+select lnr, dense_rank() over(order by sum(lmenge) desc) as [Rang], sum(lmenge)
+        as [Gesamtliefermenge]
+from lieferung
+group by lnr;
+
+-- Zeilennummern mit ROW_NUMBER
+
+-- Alle Angaben zu den Lieferanten zuzueglich einer laufenden Nummer
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+from lieferant;
+
+-- das Ergebnis einer Abfage in eine Datenbanktabelle speichern
+-- er kann gespeichert werden in eine neue permanenten Tabelle
+-- oder in temporaeren Tabellen
+-- temporaere Tabellen koennen lokal oder gobal sein
+-- temporaere Tabellen koennen von jedem Datenbanbenutzer erstellt werden
+-- sie existieren solange wie die Sitzung die sie erstellt hat existiert
+
+-- permanente Tabellen koennen nur von Benutzern mit der Berechtigung
+-- create table.. und der alter schema.. Berechtigung fuer das Schema
+-- wo die Tabelle erstellt wird, erstellt werden.
+
+-- 1. permanente Tabelle
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+into lief_m_nr
+from lieferant;
+
+-- pruefen
+
+select * from lief_m_nr;
+
+-- 2. lokal temp. Tabelle
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+into #lief_m_nr
+from lieferant;
+
+-- pruefen
+
+select * from #lief_m_nr;
+
+-- 3. globale temp. Tabelle
+
+select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+into ##lief_m_nr
+from lieferant;
+
+select * from ##lief_m_nr;
+
+-- am temporaersten sind Tabellenvariable
+
+-- diese existieren fuer die Zeitdauer eines Stapels
+
+declare @tab table([Laufende Nummer] int,
+                  Lieferantennummer char(3),
+                  Namen varchar(100),
+                  Ort varchar(100));
+
+insert into @tab select row_number() over(order by lnr asc) as [laufende Nummer],
+        lnr, lname, lstadt
+        from lieferant;
+
+select * from @tab;
+go
+
+-------
+
+use standard;
+go
+
+-- Mengenoperatoren aus der Mengenmathematik
+
+-- Adition
+-- Subtraktion
+-- Schnittmenge
+
+-- Union M1 + M2 = M2/M2
+
+--Alle Orte die Wohnorte und Lagerorte sind
+
+select lstadt from lieferant
+union
+select astadt from artikel;
+
+-- beide Abfragen links und rechts vom Operator muessen die gleiche Anzahl
+-- von Spalten haben und  die Spalten muessen zueinander kompatibel sein.
+-- das nennt man Union-Kompatibilitaet
+
+-- das formatieren des Ergbnis
+
+select lstadt as [Wohn-und Lagerorte] from lieferant
+union
+select astadt from artikel
+order by lstadt desc;
+
+-- Union eleminiert doppelte Datensaetze im Ergebnis (wie distinct)
+-- das kann ich ausschalten
+
+select lstadt as [Wohn-und Lagerorte] from lieferant
+union all
+select astadt from artikel
+order by lstadt desc;
+
+-- EXCEPT
+-- entspricht einer Subtraktion -- gibt saemtliche Datensaetze der
+-- Abfrage links vom Operator zurueck, die nicht in der Abfrage rechts
+-- vom Operator vorkommen
+
+-- Wohnort von Lieferanten wo keine Artikel gelagert sind
+
+select lstadt as [Wohn-und Lagerorte] from lieferant
+except
+select astadt from artikel;
+
+-- INTERSEC
+-- gibt saemtliche Datensaetze zurueck die sowohl in der Abfrage rechts vom Operator
+-- als auch in der Abfrage links vom Operator vorkommen
+
+-- Ortsnamen wo Lieferanten wohnen und auch Artikel gelagert werden
+
+select lstadt as [Orte] from lieferant
+intersect
+select astadt from artikel;
+
+-- Gesucht sind Nummer, Namen und Wohnorte der Lieferanten
+-- die dort wohnen wo Artikel A04 lagert.
+
+select lnr, lname, lstadt
+from lieferant
+where lstadt = (select astadt from artikel where anr = 'A04');
+
+-- Gesucht sind die Nummmern und Namen der Artikel die bereits geliefert wurden.
+
+select anr from lieferung
+
+select anr, aname
+from artikel
+where anr in(select anr from lieferung);
+
+/*
+Welche Hamburger Lieferanten haben nach dem 01.08.90 rote und blaue
+Artikel geliefert?
+*/
+
+select farbe from artikel
+
+select lname from lieferant
+
+select ldatum from lieferung
+
+select anr from artikel where farbe in('rot','blau')
+
+select *
+from lieferant
+where lstadt = 'Hamburg'
+and lnr in (select lnr
+        from lieferung
+        where ldatum > '01.08.90'
+        and anr in(select anr from artikel where farbe in('rot','blau')))
