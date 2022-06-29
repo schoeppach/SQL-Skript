@@ -1,0 +1,35 @@
+insert into dbo.lieferant values('L01', 'Schmidt', 20, 'Hamburg');
+insert into dbo.lieferant values('L02', 'Jonas', 10, 'Ludwigshafen');
+insert into dbo.lieferant values('L03', 'Blank', 30, 'Ludwigshafen');
+insert into dbo.lieferant values('L04', 'Clark', 20, 'Hamburg');
+insert into dbo.lieferant values('L05', 'Adam', 30, 'Aachen');
+
+
+
+insert into dbo.artikel values('A01', 'Mutter', 'rot', 12, 'Hamburg', 800);
+insert into dbo.artikel values('A02', 'Bolzen', 'grün', 17, 'Ludwigshafen', 1200);
+insert into dbo.artikel values('A03', 'Schraube', 'blau', 17, 'Mannheim', 400);
+insert into dbo.artikel values('A04', 'Schraube', 'rot', 14, 'Hamburg', 900);
+insert into dbo.artikel values('A05', 'Nockenwelle', 'blau', 12, 'Ludwigshafen', 1300);
+insert into dbo.artikel values('A06', 'Zahnrad', 'rot', 19, 'Hamburg', 500);
+
+
+
+insert into dbo.lieferung values('L01', 'A01', 300, '18.05.90');
+insert into dbo.lieferung values('L01', 'A02', 200, '13.07.90');
+insert into dbo.lieferung values('L01', 'A03', 400, '01.01.90');
+insert into dbo.lieferung values('L01', 'A04', 200, '25.07.90');
+insert into dbo.lieferung values('L01', 'A05', 100, '01.08.90');
+insert into dbo.lieferung values('L01', 'A06', 100, '23.07.90');
+insert into dbo.lieferung values('L02', 'A01', 300, '02.08.90');
+insert into dbo.lieferung values('L02', 'A02', 400, '05.08.90');
+insert into dbo.lieferung values('L03', 'A02', 200, '06.08.90');
+insert into dbo.lieferung values('L04', 'A02', 200, '09.08.90');
+insert into dbo.lieferung values('L04', 'A04', 300, '20.08.90');
+insert into dbo.lieferung values('L04', 'A05', 400, '21.08.90');
+
+--pruefen mit
+
+select * from lieferant
+select * from lieferung
+select * from artikel
