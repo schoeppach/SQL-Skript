@@ -1,0 +1,368 @@
+use standard
+go
+
+create table indtest
+(id int not null,
+namen varchar(100) not null,
+vname varchar(100) null,
+ort varchar(200) not null);
+go
+
+declare @x int = 1;
+while @x <= 1000000
+begin
+	insert into indtest 
+	values(@x, cast(@x as varchar(10)) + 'Warmduschwer',
+			'Max_' + cast(@x as varchar(10)),
+			cast(@x as varchar(10)) + '_Suhl_' + cast(@x as varchar(10)));
+	set @x +=1;
+	--set @x = @x +1;
+end;
+go
+
+----
+
+select count(*) from indtest;
+
+select * from indtest;
+
+select * from sys.indexes where object_id = object_id('indtest)';
+
+-- Fragmentierungsgrad des Haufens
+
+select * from
+sys.dm_db_index_physical_stats(db_id(),object_id('indtest'),null,null,null);
+
+
+-- eine Tabelle kann maxsimal 1000 Indizes besitzen
+-- 1 gruppierten Index und 999 nicht gruppierte Indizes
+
+-- Besitzt eine Tabelle keinen gruppierten Index bleiben die Daten in der
+-- Speicherorganisationsform 'Haufen'
+
+
+create index vname_ind on indtest(vname);
+
+-- welche Indizes gibt es fuer die Tabelle
+
+select * from sys.indexes where object_id = object_id('indtest)';
+
+-- Fragmentierungsgrad des Haufens
+
+select * from
+sys.dm_db_index_physical_stats(db_id(),object_id('indtest'),null,null,null);
+
+select * from indtest where vname like '%3099%';
+
+-- sobald ein gruppierter Index erstellt wird, wird die physische Reihenfolge
+-- der Datensaetze entsprechend der indizierten Reihenfolge geaendert
+
+-- Primaerschluessel fuer die Tabelle Indtest
+
+alter table indtest add constraint id_pk primary key(id);
+
+select * from indtest where vname like '%3099%';
+
+select * from indtest where id between 3055 and 10344;
+
+----
+
+-- welche Indizes gibt es fuer die Tabelle
+
+select * from sys.indexes where object_id = object_id('indtest)';
+
+-- Fragmentierungsgrad des Haufens
+
+select * from
+sys.dm_db_index_physical_stats(db_id(),object_id('indtest'),null,null,null);
+
+----
+
+select astadt
+from artikel
+where aname = 'Schraube' and astadt like '%m%';
+
+-- zusammengesetzter Index
+
+create index aname_astadt_ind on artikel(aname,astadt);
+
+select aname, astadt, amenge
+from artikel
+where farbe = 'rot';
+
+-- abgedeckter Index (der Index deckt die Abfgrage vollstaendig ab)
+
+create index farbe_art on artikel(farbe, aname, astadt, amenge);
+
+-- Index mit eingeschlossenen Spalten
+-- wird verwendet wenn die Anzahl der Spalten des zusammengesetzten Index
+-- 16 Spalten überschreitet und/oder die Laenge der Spaltenwerte groesser
+-- 900 Byte ist.
+
+create index farbe_art_inc on artikel(farbe) include (aname, astadt, amenge);
+
+select aname, astadt, amenge
+from artikel
+where farbe = 'rot';
+
+-- damit ist der zusammengesetzte Index ueberfluessig und kann geloescht werden
+
+drop index artikel.farbe_art;
+
+select * from artikel
+
+-- Extras SQL Server Profiler 
+
+-- Indexfragmentierung
+-- die Fragmentierung von Indizes stellen Sie mit der dynamischen Verwaltungs-
+-- funktion sys.de_db_indexphysical_stats() fest
+-- wichig dabei ist die Spalte avg_fragmentation_in_percent
+
+-- bei Fragmetation bis 30 % wird der Index neu Organisiert
+
+alter index farbe_art_inc on artikel reorganize;
+
+-- bei Fragmentation ueber 30 % wird der Index neu gebildet
+
+alter index farbe_art_inc on artikel rebuild;
+
+----
+
+use standard;
+go
+
+-- Programmieren mit Tranact "SQL"
+
+-- Begriffe:
+-- Script -- ist eine Datei welche mit der Endung .sql abgespeichert wird
+-- Stapel .. ein Script besteht aus einem oder mehrern Stapel
+--		ein Stapel endet mit einem Stapelzeichen "go"
+--		eine Variable welche in einem Stapel deklariert wurde kann in
+--		einem anderen Stapel nicht verwendet werden -- sie ist nicht bekannt
+
+-- Anweisungsbloecke
+-- werden verwendet in einer WHILE - Schleife, im IF und ELSE Zweig einer
+-- IF/ELSE - Anweisung und im Body von benutzerdefinierten Funktionen
+
+begin
+	select @@version;
+	select * from lieferant
+end;
+
+-- Meldungen
+-- einfache Meldungen mit PRINT
+-- Print gibt nur Zeichenfolgen zurück
+
+print 'Heute ist' + datename(dw,getdate()) + 
+	  'der' + convert(char(10),getdate(),104)
+
+-- Meldungen mit raiserror
+-- mit raiserror koennen benutzerdefinierte Meldungen, Systemmeldungen
+-- und AdHoc - Meldungen verwendet werden
+
+-- Systemmeldungen und benutzerdefinierte Meldungen werden in sys.messages
+-- gespeichert
+
+select * from sys.messages where language_id = 1031;
+
+
+-- benutzerdefinierte Meldungen beginnen bei der messages_id > 50000
+-- Raiserrormeldungen besitzen einen Schweregrad
+--  1 - 10 -- einfache Fehler die vom Benutzer behoben werden
+-- 11 - 18 -- komplexere Fehler die teilweise vom Benutzer behoben werden koennen
+-- 19 - 25 -- schwerwiegende Fehler des Systems, koennen nur von sysadmins behoben
+	   -- werden und muessen ins Ereignisprotokoll von Windows geschrieben werden
+-- 20 - 25 -- trennt den Client vom Server
+
+-- Meldung ertellen
+
+exec sp_addmessage 600000, 10,'Cant deleted!','us_english', 'false';
+exec sp_addmessage 600000, 10,'Kann nicht geloescht werden!','german', 'false';
+
+-- Meldung verwenden
+
+raiserror(600000,10,1);				-- Meldung
+raiserror(600000,13,1);				-- Fehler 600000
+raiserror(600000,21,1) with log;	        -- schwerer Fehler
+
+-- sie koennen Raiseerrror mit jedem Schweregrad ins Ereignisprotokoll
+-- eintragen lassen;
+
+raiserror(600000,13,1) with log;	-- Fehler 600000 im Ereignisprotokoll
+
+-- AdHoc - Meldungen
+
+raiserror('Heute ist Donnerstag.',10,1);
+
+use standard 
+go
+
+-- Variable
+-- der Inhalt einer Variablen steht nur innerhalb der Stapel zur Verfuegung
+-- in dem die Variable deklariert wurde
+
+-- Deklaration
+
+declare @ort varchar(50), @farbe varchar(10), @nummer char(3)
+declare @kuchen xml;
+declare @erg table(nummer char(3),
+				   namen varchar(50),
+				   lagermenge int);
+
+-- Wertzuweissung
+
+-- 1. Werte fuer skalare Variablen 
+
+set @ort = 'Hamburg';
+set @farbe = 'rot';
+set @nummer = 'A03';
+
+-- 2. Werte durch Abfrage
+
+select @ort = astadt, @farbe = farbe from artikel where anr = @nummer;
+
+set @kuchen = '<rezept>			
+				<mehl>500</mehl>	
+				<eier>4</eier>
+				<zucker>200</zucker>
+				</rezept>';
+
+insert into @erg select anr, aname, amenge from artikel where astadt = @ort;
+
+-- Variableninhalt anzeigen lassen
+
+select @ort as [Ortsvariable], @farbe as [Farbe], @nummer as [Artikelname];
+
+-- zu 2tens 
+
+print 'Der Artikel' + ' (' + @nummer + ') ist ' + @farbe + ' und lagert in ' + @ort;
+
+-- xml
+
+select @kuchen;
+
+-- Tabellenvariable
+
+select * from @erg;
+go
+
+use standard
+go
+
+-- Sprachkonstukte
+
+-- IF/ELSE
+
+declare @tab sysname = 'zitrone'
+if not exists(select * from sys.tables where object_id = object_id(@tab))
+begin	
+	raiserror('Die Tabelle gibt es nicht.',10,1,@tab);
+	return;
+end
+go
+
+----
+
+declare @datum datetime = '11.06.2022';
+if @datum >= dateadd(dd, -7, getdate())
+begin
+	raiserror('Datum ist im Bereich.',10,1);
+end;
+else
+begin
+	raiserror('Datum ist zu gross.',10,1);
+end;
+go
+
+-- neu im Angebot
+
+drop table if exists zitrone;
+
+-- Schleifen
+
+declare @x int = 1;
+while @x <=10
+begin
+	print cast(@x as varchar(10)) + '.Durchfall.';
+	set @x +=1;
+end;
+
+
+-- Try -- CATCH
+
+begin try
+	begin 
+		select 1/0;
+	end
+end try
+begin catch
+	begin
+		select ERROR_NUMBER() as [Fehlernummer],
+			   ERROR_MESSAGE() as [Fehlertext],
+			   ERROR_SEVERITY() as [Schweregrad];
+	end
+end catch
+go
+
+-- und
+
+begin try
+	begin
+		begin transaction erdbeere
+		update lieferant set lstadt = 'Erfurt';
+		select 1/0;
+		commit transaction erdbeere
+	end
+end try
+begin catch
+	begin
+		rollback transaction erdbeere
+		select ERROR_NUMBER() as [Fehlernummer],
+			   ERROR_MESSAGE() as [Fehlertext],
+			   ERROR_SEVERITY() as [Schwerergrad]
+		end
+end catch;
+go
+
+----
+
+use standard
+go
+
+-- Dynamische SQL Anweissungen
+
+declare @tab sysname, @nr char(3), @spalte1 sysname, @spalte2 sysname
+set @nr = 'A03';
+set @tab = 'artikel';
+set @spalte1 = 'aname';
+set @spalte2 = 'astadt';
+
+-- select @spalte1, @spalte2 from @tab where anr = @nr;
+
+-- in der FROM - Klausel darf nur ein Tabellenname oder eine Tabellenvariable stehen
+-- der Abfrageoptimierer stellt fest das eine Variable in der FROM - Klausel steht,
+-- sie aber nicht als Variable deklariert wurde.
+
+-- wir benoetigen eine dynamische SQL Anweisung. diese wird erst zur Laufzeit 
+-- aufgebaut und mit execute ausgefuehrt.
+
+-- den Abfragestring koennen sie einer Variablen uebergeben oder direkt
+-- im EXECUTE definieren
+
+-- exec('select' + @spalte1 + ',' +@spalte2 + 'from' + @tab + 'where anr =' + @nr);
+
+-- declare @sql varchar(max)
+-- set @sql = 'select' + @spalte1 + ', ' + @spalte2 + 'from' + @tab + 'where anr = ' + @nr;
+-- select @sql;
+
+
+declare @tab sysname, @nr char(3), @spalte1 sysname, @spalte2 sysname
+set @nr = 'A03';
+set @tab = 'artikel';
+set @spalte1 = 'aname';
+set @spalte2 = 'astadt';
+declare @sql varchar(max), @hk char(1) = char(39);
+set @sql = 'select ' + @spalte1 + ', ' + @spalte2 + 
+		   ' from ' + @tab + ' where anr = ' + @hk + @nr + @hk;
+exec(@sql);
+go
