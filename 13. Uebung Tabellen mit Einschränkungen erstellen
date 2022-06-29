@@ -1,0 +1,123 @@
+Übung 6
+ 
+use master
+go
+create database forschung
+on primary
+	(name = forschung_sk,
+	filename = 'e:\daten\forschung_sk.mdf',
+	size = 20MB,
+	maxsize = 50MB,
+	filegrowth = 5%),
+filegroup aktiv
+	(name = forschung_daten1,
+	filename = 'f:\daten\forschung_daten1.ndf',
+	size = 20MB,
+	maxsize = 50MB,
+	filegrowth = 10MB),
+filegroup passiv
+	(name = forschung_daten2,
+	filename = 'g:\daten\forschung_daten2.ndf',
+	size = 50MB,
+	maxsize = 200MB,
+	filegrowth = 5%)
+log on
+	(name = forschung_log,
+	filename = 'j:\protokoll\forschung_log.ldf',
+	size = 7MB,
+	maxsize = 25MB,
+	filegrowth = 5%);
+go
+
+
+
+alter database forschung
+modify filegroup passiv default;
+go
+
+use forschung;
+go
+
+create table orte
+(ortid int not null constraint ortid_ps primary key,
+plz char(5),
+ortsname nvarchar(100),
+constraint orte_unq unique(plz,ortsname));
+go
+
+-- Stammdatensaetze Orte fuer die Abteilungen
+
+insert into orte values(1,'98527','Suhl');
+insert into orte values(2,'99082','Erfurt');
+insert into orte values(3,'99423','Weimar');
+insert into orte values(4,'07743','Jena');
+insert into orte values(5,'99868','Gotha');
+insert into orte values(6,'99734','Nordhausen');
+insert into orte values(7,'99610','S�mmerda');
+go
+
+create table abteilung
+(abt_nr char(3) not null constraint abt_nr_ps primary key
+			  constraint abt_nr_chk check((abt_nr like 'a[1-9][0-9]'
+			  or abt_nr like 'a[1-9]')
+			  and cast(substring(abt_nr,2,2) as integer) between 1 and 50),
+ abt_name nchar(50) not null constraint abt_name_chk check(abt_name like '[A-Z]%'),
+ ortid int not null constraint aortid_fs references orte(ortid)
+					constraint aortid_chk check(ortid in(1,2,3,4,5,6,7)));
+go
+
+insert into abteilung values('a1','Forschung',1);
+go
+
+create table projekt
+(pr_nr char(4) not null constraint pr_nr_ps primary key 
+			 constraint pr_nr_chk check((pr_nr like 'p[1-9][0-9][0-9]'
+			 or pr_nr like 'p[1-9][0-9]'
+			 or pr_nr like 'p[1-9]')
+			 and cast(substring(pr_nr,2,3) as integer) between 1 and 150),
+ pr_name nchar(50) not null constraint pr_name_chk check(pr_name like '[A-Z]%'),
+ mittel money not null constraint mittel_chk check(mittel between 1 and 2000000));
+go
+
+insert into projekt values('p1','Mondlandung', 600000);
+go
+
+create table mitarbeiter
+(m_nr integer not null identity(1000,1) constraint m_nr_ps primary key,
+ m_name nchar(50) not null constraint m_name_chk check(m_name like '[A-Z]%'),
+ m_vorname nchar(50) null constraint m_vorname_chk check(m_vorname like '[A-Z]%'),
+ ortid int not null constraint mortid_fs references orte(ortid),
+ strasse nchar(100)null constraint strasse_chk check(strasse like '[A-Z]%'),
+ geb_dat date null,
+ abt_nr char(3) null constraint abt_nr_fs references abteilung(abt_nr)
+								  on update cascade);
+go
+
+insert into mitarbeiter values('M�ller','Bernd',1,'Hochheimer Stra�e 2',
+							   '18.09.1999', 'a1');
+go
+
+create table arbeiten
+(m_nr integer not null constraint m_nr_fs references mitarbeiter(m_nr)
+									on update cascade,
+ pr_nr char(4) not null constraint pr_nr_fs references projekt(pr_nr)
+									on update cascade ,
+ aufgabe nchar(200) null constraint aufgabe_chk check(aufgabe like '[A-Z]%'),
+ einst_dat date not null constraint einst_dat_chk 
+							 check(einst_dat >= dateadd(dd,-7,getdate())),
+ constraint arbeiten_ps primary key(m_nr,pr_nr)) on aktiv;
+go
+
+insert into arbeiten values(1000,'p1','Organisator',getdate());
+go
+
+create table telefon
+(m_nr integer not null constraint m_nr_fk references mitarbeiter(m_nr)
+									on update cascade,
+ vorw char(10) not null,
+ tel_nr char(10) not null,
+constraint tel_ps primary key(vorw, tel_nr));
+go
+
+insert into telefon values(1000, '0361', '563399');
+go
