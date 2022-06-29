@@ -1,0 +1,179 @@
+Uebung zu Abfragen:
+
+/*
+Alle Angaben zu den Lieferanten deren Statuswert ueber dem durchschnittlichen
+Statuswert der Lieferanten liegt, die in der gleichen Stadt wohnen
+wie Lieferant L02.
+*/
+
+select lstadt
+from lieferant
+where lnr = 'L02'
+
+select avg(status) 
+from lieferant
+
+select * from lieferant
+where status > (select avg(status) from lieferant
+            where lstadt = (select lstadt from lieferant where lnr = 'L02'))
+
+/*
+Nummern und Namen der Artikel die im August 1990 von Lieferanten geliefert wurden 
+die mindestens 3x geliefert werden.
+*/
+
+-- 1. Frage: welche Lieferanten haben mind. 3 x geliefert?
+
+select lnr from lieferung group by lnr having count(lnr) >= 3
+
+-- 2. Frage: haben diese Lieferanten im August 1990 geliefert
+
+select anr 
+from lieferung
+        where datepart (mm,ldatum) = 8
+        and datepart (yyyy,ldatum) = 1990
+        and lnr in (select lnr from lieferung group by lnr having count(lnr) >= 3)
+
+-- 3. Wenn ja was?
+
+(select anr 
+        from lieferung
+        where datepart (mm,ldatum) = 8
+        and datepart (yyyy,ldatum) = 1990
+        and lnr in (select lnr from lieferung group by lnr having count(lnr) >= 3))
+
+-- 4. Frage Welche Nummer und welchen Namen haben die Artikel
+
+select anr, aname
+from artikel 
+        where anr in(select anr 
+            from lieferung
+            where datepart (mm,ldatum) = 8
+            and datepart (yyyy,ldatum) = 1990
+            and lnr in (select lnr from lieferung group by lnr having count(lnr) >= 3))
+
+/*
+Gesucht ist das Lieferdatum der Lieferungen wo Hamburger Lieferanten
+rote und blaue Artikel geliefert haben.
+*/
+
+select ldatum
+from lieferung
+where lnr in (select lnr
+             from lieferant
+             where lstadt = 'Hamburg'
+             and anr in (select anr from artikel where farbe in('rot','blau')))
+
+-- oder 
+
+select convert(char(10),ldatum,104) as [Lieferdatum]
+from lieferung
+where lnr in (select lnr
+             from lieferant
+             where lstadt = 'Hamburg')
+             and anr in (select anr from artikel where farbe in('rot','blau'))
+
+insert into lieferung values('L04','A04',500,'09.08.90');
+insert into lieferung values('L04','A03',500,'09.08.90');
+
+/*
+Gesucht sind die Namen und Nummern der Artikel deren letzte Lieferung
+an dem Tag war als auch Artikel A02 zuletzt geliefert wurde.
+*/
+
+select anr, aname 
+from artikel
+where anr in(select anr from lieferung
+             group by anr
+             having max(ldatum) = (select max(ldatum)
+                                  from lieferung
+                                  where anr = 'A02'));
+
+/*
+Nummern und Namen der Lieferanten die jeden Artikel geliefert haben.
+*/
+
+select lnr, lname
+from lieferant 
+where lnr in(select lnr from lieferung)
+            
+    
+
+select lnr, lname
+from lieferant 
+where lnr in(select lnr 
+             from lieferung
+             group by lnr
+             having count(distinct anr) = (select count(anr)
+             from artikel));
+
+-- delete artikel where anr > 'A06' 
+
+/* Nummern und Namen von Artikel die mindestens zweimal geliefert wurden, 
+von Lieferanten die ebenfalls mehr als zweimal geliefert haben.
+*/
+
+select anr, aname
+    from artikel
+    where anr in(select anr
+                from lieferung
+                group by anr
+                having count(anr) >=2)
+
+--oder
+
+select anr, aname
+    from artikel
+    where anr in (select anr
+                 from lieferung
+                 where lnr in(select lnr from lieferung group by lnr having count(lnr) > 2)
+                 group by anr
+                 having count(anr) >=2)
+
+--Unterabfragen in der SELECT -Liste
+
+select anr, aname, gewicht,
+        gewicht -(select avg(gewicht) from artikel) as [Abweichung vom Durchschnitt]
+from Artikel;
+
+-- korrelierte Unterabfragen
+
+-- langsamste Art von Unterabfragen
+-- fast jede korrelierte Unterabfrage kann in eine einfache Unterabfrage
+-- oder in einen Join umgewandelt werden.
+
+-- im Gegensatz zu einfachen Unterabfragen beginnt eine korrelierte
+-- Unterabfrage mit der auesseren Abfrage
+
+-- Lieferanenten die mindestens dreimal geliefert haben
+
+select *
+from lieferant as a
+where 3 <= (select count(lnr)
+            from lieferung as b
+            where a.lnr = b.lnr);
+-- oder
+
+select *
+from lieferant
+where 3 <= (select count(lnr)
+            from lieferung
+            where lieferant.lnr = lieferung.lnr);
+
+-- delete lieferung where datepart(yyyy,ldatum) > 1990;
+
+-- Alle Angaben zu Lieferanten die geliefert haben
+
+select *
+from lieferant as a
+where exists (select *
+            from lieferung as b
+            where a.lnr = b.lnr);
+
+-- oder
+
+select *
+from lieferant
+where exists (select *
+              from lieferung
+              where lieferant.lnr = lieferung.lnr);
