@@ -1,0 +1,274 @@
+ Übung 5:
+
+ 1. 
+
+ -- die Daten aller Lieferanten aus Ludwigshafen?
+
+ select *
+ from Lieferant 
+ where lstadt = 'Ludwigshafen'
+
+ 2.
+
+ -- die Nummern, Namen und Lagerorte aller gelieferter Artikel
+
+ select distinct a.anr, aname, astadt
+ from artikel a, lieferung b
+ where a.anr = b.anr;
+
+ 3.
+
+ -- die Nummern und Namen aller Artikel und ihr Gewicht in kg
+
+ select anr, aname, gewicht * 0.001 as [kg]
+ from artikel;
+
+ 4. 
+
+ -- die Namen aller Lieferanten aus Aachen mit einem Statuswert 
+ -- zwischen 20 und 30
+
+ select lname 
+ from lieferant
+ where lstadt = 'Aachen' and status between '20' and '30'
+
+ 5.
+
+ -- die Nummern und Namen aller Artikel, deren Gewicht 
+ -- 12, 14 oder 17 Gramm betraegt
+
+ select anr, aname
+ from artikel
+ where gewicht in ('12','14','17')
+
+ 6.
+
+ -- die Daten aller Lieferungen von Lieferanten aus Hamburg 
+
+ select *
+ from lieferung
+ where lnr in (select lnr
+              from lieferant
+              where lstadt = 'Hamburg')
+
+ 7. 
+
+-- Artikelnummern, Artikelname und Lieferantennummern und Lieferantennamen 
+-- mit uebereinstimmenden Lagerort und Wohnort
+
+ select anr,aname,lnr,lname 
+ from artikel join lieferant on astadt = lstadt;
+
+ 8.
+
+ -- Artikelnummer, Artikelname und Lagerort aller gelieferten Artikel 
+ -- und Lieferantennummer Lieferantenname 
+ -- und Wohnort des jeweiligen Lieferanten,
+ -- sofern Lagerort und Wohnort uebereinstimmen
+
+ select anr, aname, astadt, lnr, lname, lstadt
+ from artikel, lieferant
+ where astadt = lstadt
+ and anr + lnr in (select anr +lnr
+                   from lieferung)
+
+ 9.
+
+ -- Paare von Artikelnummern, von Artikeln mit gleichem Lagerort 
+ -- (Jedes Paar soll nur einmal ausgegeben werden)
+
+ select a.anr, b.anr
+ from artikel a, artikel b
+ where a.astadt = b.astadt
+ and a.anr < b.anr;
+
+ 10.
+ 
+ -- Nummern aller Lieferanten, die mindestens einen Artikel geliefert
+ -- haben den auch Lieferant 'L03' geliefert hat
+
+  select lnr 
+  from lieferung
+  where anr in (select anr 
+                from lieferung
+                where lnr = 'L03')
+  and lnr <> 'L03';
+
+ 11.
+
+ -- Nummern aller Lieferanten, die mehr als einen Artikel geliefert haben
+
+   select lnr 
+   from lieferung
+   group by lnr
+   having count(distinct anr) > 1;
+ 
+ 12.
+
+ -- Nummern und Namen der Artikel, die am selben Ort wie Artikel A03
+ -- gelagert werden
+
+   select anr, aname
+   from artikel
+   where anr = 'A03'
+
+   -- besser
+
+   select anr, aname
+   from artikel
+   where astadt = (select astadt
+                   from artikel
+                   where anr = 'A03')
+   and anr <> 'A03'
+
+ 13.
+
+ -- durchschnittliche Liefermenge des Artikels A01
+
+   select avg(lmenge)
+   from lieferung
+   where anr = 'A01' 
+
+ 14.
+
+ -- Gesamtliefermenge aller Lieferungen des Artikels A01 durch den Lieferanten
+ -- L02
+
+   select sum(lmenge)
+   from lieferung
+   where anr = 'A01' and lnr = 'L02'
+  
+ 15.
+
+ -- Lagerorte der Artikel, die von Lieferant L02 geliefert wurden
+
+   select astadt 
+   from artikel a, lieferung b
+   where a.anr = b.anr
+   and lnr = 'L02';
+
+ 16. 
+
+ -- Nummern und Namen der Lieferanten, deren Statuswert kleiner als 
+ -- der von Lieferant L03 ist
+
+   select lnr, lname
+   from lieferant
+   where status  < (select status 
+                    from lieferant 
+                    where lnr = 'L03')
+
+ 17.
+ 
+ -- Nummern von Lieferanten, welche die gleichen Artikel wie 
+ -- Lieferant L02 geliefert haben
+ 
+   select distinct lnr 
+   from lieferung a
+   where lnr <> 'L02'
+   and not exists    (select * 
+                      from lieferung b
+                      where lnr = 'L02'
+                      and not exists   (select * 
+                                        from lieferung c
+                                        where c.lnr = a.lnr
+                                        and c.anr = b.anr));
+                                    
+ 18.
+
+ -- die Namen aller Orte die Lager Ort von Artikeln oder Wohnort 
+ -- von Lieferanten sind
+
+    select astadt as [Lagerort bzw. Wohnort]
+    from artikel
+    union
+    select lstadt 
+    from lieferant;       
+
+ 19.
+
+ -- Nummern und Namen aller Lieferanten, die nicht den Artikel A05 
+ -- geliefert haben
+
+    select lnr, lname 
+    from lieferant 
+    where lnr not in (select lnr
+                      from lieferung
+                      where anr = 'A05');
+                                      
+ 20.
+
+ -- Lieferantennummern und Namen der Lieferanten, die alle Artikel 
+ -- geliefert haben
+
+    select lnr, lname
+    from lieferant
+    where lnr in  (select lnr
+                   from lieferung
+                   group by lnr
+                   having count(distinct anr) = (select count(*) from artikel));
+
+ 21.
+
+ -- Nummern, Namen und Wohnort der Lieferanten, die bereits geliefert 
+ -- haben und deren Statuswert groesser als
+ -- der kleinste Statuswert aller Lieferanten ist
+
+    select distinct a.lnr, lname, lstadt
+    from lieferant a, lieferung b
+    where a.lnr = b.lnr
+    and status > (select min (status) from lieferant);
+
+ 22.
+
+ -- Nummern und Bezeichnung aller Artikel, deren durchschnittliche Liefermenge 
+ -- kleiner als die des Artikels A03 ist
+
+    select a.anr, aname
+    from artikel a, lieferung b
+    where a.anr = b.anr
+    group by a.anr, aname
+    having avg (lmenge) < (select avg (lmenge)
+                            from lieferung
+                            where anr = 'A03');
+
+ 23.
+
+ -- Lieferantennummern, Lieferantenname, Artikelnummer und 
+ -- Artikelbezeichnung aller Lieferungen, die seit dem 05.05.1990
+ -- von Hamburger Lieferaanten durchgefuehrt
+ -- wurden
+
+    select a.lnr, lname, b.anr, aname
+    from lieferant a join lieferung b on a.lnr = b.lnr join artikel 
+    c on b.anr = c.anr
+    where lstadt = 'Hamburg'
+    and ldatum >= '05.05.1990';
+
+24. 
+ 
+ -- Anzahl der Lieferungen, die seit dem 05.05.1990 von Hamburger Lieferanten
+ -- durchgefuehrt wurden
+
+    select count(*)
+    from lieferant a, lieferung b
+    where a.lnr = b.lnr
+    and lstadt = 'Hamburg'
+    and ldatum >= '05.05.1990';
+
+ 25.
+
+ -- Ortsnamen, die Wohnort aber nicht Lagerort sind
+
+    select distint lstadt
+    from lieferant
+    where lstadt not in     (select astadt
+                             from artikel);
+
+26.
+
+ -- Ortsnamen, die sowohl Wohnort als auch Lagerort sind
+
+    select distint lstadt
+    from lieferant, artikel
+    where lstadt = astadt;
