@@ -1,0 +1,296 @@
+TAG 2:
+
+use standard
+go
+
+select anr, aname, gewicht, astadt, amenge
+from artikel
+where anr in('A01','A02','A03')
+
+-- Ergebnisse formatieren
+
+-- 1. Literale (erlaeuternder Text)
+
+-- beschreibt den Inhalt einer Spalte
+
+select anr, aname, gewicht 'Gramm', astadt, amenge 'Stueck'
+from artikel
+where anr in('A01','A02','A03')
+
+-	aendern der Spaltennamen
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+where anr in('A01','A02','A03')
+
+--oder
+
+select anr  [Artikelnummer], aname [Artikelname], 
+gewicht [Gewicht], 'Gramm' [Gewichtseinheit], 
+astadt [Lagerort], amenge [Lagermenge], 'Stueck' [Lagereinheit]
+from artikel
+where anr in('A01','A02','A03')
+
+--oder
+
+select   [Artikelnummer] = anr, [Artikelname] = aname,  
+  [Gewicht] = gewicht,  [Gewichtseinheit] = 'Gramm', 
+  [Lagerort] = astadt, [Lagermenge] = amenge, [Lagereinheit] = 'Stueck'
+from artikel
+where anr in('A01','A02','A03')
+
+-- Sortieren der Ergebnismenge
+-- das Ergebnis soll nach dem Artikelnamen aufsteigend sortiert werden
+-- und bei gleichen Artikelnamen nach dem Lagerort absteigend sortiert werden
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by aname asc, astadt desc;
+
+-- oder
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by [Artikelnummer] asc, [Lagerort] desc;
+
+-- oder
+
+select anr as [Artikelnummer], aname as [Artikelname], 
+gewicht as [Gewicht], 'Gramm' as [Gewichtseinheit], 
+astadt as [Lagerort], amenge as [Lagermenge], 'Stueck' as [Lagereinheit]
+from artikel
+order by 2 asc, 5 desc;
+
+-- Entfernen doppelter Datensaetze aus dem Ergebnis
+
+-- Schluesselwort DISTINCT entfernt doppelte DS aus dem Ergebnis
+-- Distinct wird eingesetzt
+--                  1. in der Select Liste
+--                  2. in Argument einer Aggregatfunktion
+
+-- Welche Lieferungen (lnr) haben geliefert?
+
+select lnr from lieferung       -- 12 DS mit redundanten Informationen
+
+select distinct lnr from lieferung;     --4DS
+
+select distinct lnr from lieferant;     -- Sinnlos, unverschaemt blamabel
+
+-- CASE Ausdruecke
+
+-- Einfaches CASE
+-- es wird ein Ausdruck mit mehreren anderen Ausdruecken verglichen um das
+-- Resultset zu finden
+
+select lnr, lname, lstadt, case lstadt
+                           when 'Hamburg' then 'wohnt im Norden'
+                           when 'Ludwigshafen' then 'wohnt im Westen'
+                           else 'wohnt auch'
+                           end as [Bewertung]
+
+from lieferant;
+
+delete lieferant where lnr > 'L05';
+
+-- komplexes CASE
+-- hierbei werden wie bei einer WHERE - Klausel Bollsche Ausdruecke 
+-- Ueberprueft und bei Uebereinstimmungen ein Resultset zurueckgegeben
+
+select anr, aname, amenge, farbe, 
+       case
+       when amenge = 1200 and farbe = 'gruen' then 'toller Artikel'
+       when amenge = 1300 and farbe = 'blau' then 'noch toller'
+       else 'auch toll'
+       end as [Bewertung]
+from artikel;
+
+-- Berechnen von Ergebnismengen und arbeiten mit Funktionen
+
+-- Arithmetische Operatoren
+
+select 2 + 6;
+select 3 - 9;
+select 2 * 3;
+select 2 * 3.3;
+select 5 / 2;       -- Ganzzahl der Division
+select 5 / 2.0;     -- korrektes Ergebnis
+select 5 % 2;       -- ganzzahliger Divisionsrest
+
+select anr, aname, gewicht * 0.001 as [GEwicht in Kilo],
+       amenge * gewicht * 0.001 as [Gesamtlagergewicht]
+from artikel;
+
+-- Operator + fuer die Verkettung von Zeichenfolgen
+
+select 'Der Lieferant' + lname + ' (' + lnr + '), wonht in ' +
+        lstadt + ' und hat einen Status von ' + cast(status as varchar(10))
+from lieferant;
+
+-- Skalare Funktionen
+
+select lname, DATALENGTH(lname) as [Anzahl Byte] len(lname) as[Anzahl Zeichen]
+from lieferant;
+
+select host_name();             -- Name des Servers auf dem SQL Server laeuft
+select host_id();               -- ID der aktuellen Arbeitsstation
+
+select user_name();             -- Datenbankbenutzername
+select user_id();
+select suser_name()             -- Login
+select suser_id();
+
+select newid();
+
+-- mathematische Funktionen
+
+select round(233.871, 2);       -- auf/abrunden
+select round(233.871, -2);
+
+select rand();                  -- eine zufuellige Zahl zwischen 0 und 1
+select round(rand() * 100,0)
+
+-- Zeichenfolge Funktionen
+
+select char(39);                -- ASCI Zeichen Hochkomma
+
+select replace('Hustensaftschmuggler', 'saft', 'bier');
+
+select replicate('Bier' , 10); 
+
+-- Namen und Wohnort der Lieferanten in einer Spalte mit einem Abstand von 20 
+-- Leerzeichen
+
+select lname + space(20) + lstadt
+from lieferant;
+
+--Gesucht ist der zweite Buchstabe jedes Lieferantennamen
+
+select lname, substring(lname,2,1) [zweiter Buchstabe]
+from lieferant
+
+-- der Chef moechte die Lieferantennummern statt mit einem L mit einem K
+-- beginnen lassen und der numerische Teil soll dreistellig sein und bei
+-- 101 beginnen
+
+select lnr
+from lieferant;
+
+--numerischen Teil und alfanumerischen Teil trennen
+
+select substring(lnr,2,2)
+from lieferant
+
+-- Ziffern in Zahlen umwandeln
+
+select cast(substring(lnr,2,2) as int)
+from lieferant
+
+-- um 100 erhoehen
+
+select cast(substring(lnr,2,2) as int) +100
+from lieferant
+
+-- vor die Zahl das K setzten, dazu muss die Zahl vorher String werden
+
+select 'K' + cast(cast(substring(lnr,2,2) as int) +100 as varchar(4))
+from lieferant;
+
+-- Datums- und Zeitfunktion
+
+select getdate();
+select year(getdate());             -- Ergebnis numersich
+select month(getdate());            -- Ergebnis numersich
+select day(getdate());              -- Ergebnis numersich
+
+select lnr, ldatum, day(ldatum), month(ldatum), year(ldatum)
+from lieferung;
+
+select date();
+
+-- bestimmen welcher Wochentag der Wochenbeginn ist
+
+-- fuer Deutschland
+
+select @@datefirst;                 -- 1 --> Montag
+
+-- fuer USA
+
+set language us_englisch;
+select @@datefirst;                 -- 7 --> Sonntag
+
+-- Russia
+set language russian;
+select @@datefirst;                 -- 1 --> Montag
+
+-- Datumsfuntionen zum Berechnen von Datumswerten
+
+select datename(dw,getdate());      -- Mittwoch --> alfanumerisch
+select datename(mm,getdate());      -- Juni     --> alfanumerisch
+select datename(yyyy,getdate());    -- 2022     --> alfanumerisch
+
+select datepart(dd,getdate());      -- 1        --> numerisch
+select datepart(mm,getdate());      -- 6        --> numerisch
+select datepart(yyyy,getdate());    -- 2022     --> numerisch
+
+-- Alle im August 1990 durchgefuehrten Lieferungen
+
+select * from lieferung
+where datepart(mm,ldatum) = 8
+and datepart (yyyy,ldatum) = 1990;
+
+-- Zahlungstermin 37 Tage nach  Lieferdatum
+
+select lnr, anr, ldatum, dateadd(dd, 37, ldatum) as [Zahlung]
+from lieferung;
+
+-- Anzahl der Monate seit Lieferung bis Heute
+
+select lnr, anr, ldatum, datediff(mm,ldatum,getdate()) as [Anzahl Monate]
+from lieferung;
+
+-- Datum Konvertieren
+
+-- nicht mit cast() konvertieren, da sonst unerwartete Ergebnisse
+-- auftreten
+
+-- Lieferungen in einem deutschen Format (dd.mm.yyyy) darstellen.
+
+select lnr, anr, cast(ldatum as char(10)) from Lieferung
+
+-- besser ist die Funktion convert
+
+select lnr, anr, convert(char(10),ldatum,104) from Lieferung;
+
+Uebung 2:
+
+1.
+
+-- Schreiben sie eine Abfrage auf Tabelle Lieferung 
+-- in der Datenbank Standard, welche ihnen nachstehendes 
+-- Ergebnis liefert
+
+select anr as [Artikelnummer], lmenge as [Liefermenge], 
+datename(dw,ldatum)+' der '+
+datename(dd,ldatum)+'. '+
+datename(mm,ldatum)+' '+
+datename(yyyy,ldatum) as [Lieferdatum]
+from lieferung;
+
+2.
+
+-- Schreiben sie eine Abfrage auf Tabelle Lieferung 
+-- in der Datenbank Standard, welche ihnen nachstehendes  
+-- Ergebnis liefert
+
+select anr as 'Artikelnummer', convert(char(10),ldatum,104) as 'Lieferdatum',
+'vor ' + cast(datediff(dd, convert(datetime,ldatum,104), getdate())/365 as varchar(10)) +
+' Jahren und ' +
+cast(cast(datediff(dd, ldatum, getdate()) % 365.25/30.4375 as int) as varchar(2))
++ ' Monaten.' as 'Die Lieferung ...'
+from lieferung;
