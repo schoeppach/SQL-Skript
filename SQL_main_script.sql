@@ -4795,7 +4795,215 @@ go
 
 select * from dbo.fk_lftart('Hamburg', 1990);
 
+--------------------------------------------------------------
 
+TAG 23:
+
+use standard;
+go
+
+-- Funktionen mit mehreren Anweisungen und Tabellenrueckgabe
+
+/*
+Eine Funktion der entweder der Tabellenname "lieferant" oder der 
+Tabellenname "artikel" uebergeben wird.
+Je nachdem was uebergeben wird soll entweder der Name, die Nummer und
+der Wohnort der Lieferanten oder die Nummer, der Name und der Lagerort 
+der Artikel ausgegeben werden.
+*/
+
+create function fk_lieferartikel(@tabname sysname = 'lieferant')
+returns @tab table (Nummmer char(3),
+					Namen varchar(100),
+					Orte varchar(100))
+as
+begin
+	if @tabname = 'lieferant'
+	insert into @tab select lnr, lname, lstadt from lieferant;
+	if @tabname = 'artikel'
+	insert into @tab select anr, aname, astadt from artikel;
+	return;
+end;
+go
+
+-- pruefen mit
+
+select * from fk_lieferartikel('artikel');
+
+select * from fk_lieferartikel('artikel') where namen like '%e%';
+
+-----------------
+
+use standard;
+go
+
+/*
+Schreiben Sie eine Funktion der eine Monatsangabe übergeben wird.
+Dieser Monat soll als Zahl (1-12) oder mit seinem Namen (Januar, Februar,...)
+übergeben werden können.
+Die Fünktion soll die Lieferantennummer, den Lieferantennamen, den
+Namen des gelieferten Artikels und das Lieferdatum (deutsches Format)
+zurückgeben.
+*/
+
+create function fk_liefmonat(@monat varchar(100))
+returns @erg table (Lieferantennummer char(3),
+					Lieferantenname varchar(50),
+					Artikelname varchar(50),
+					Lieferdatum varchar(10))
+as
+begin
+ if len(@monat) > 2
+ begin
+	if @monat in('Januar','Februar','März','April','Mai','Juni',
+				 'August','September','November','Dezember')
+	   insert into @erg select a.lnr, lname, aname,
+						convert(char(10), ldatum, 104)
+						from lieferant a join lieferung b on a.lnr = b.lnr
+						join artikel c on b.anr = c.anr
+						where datename(mm,ldatum) = @monat;
+ end
+ else
+ begin
+ if cast(@monat as int) between 1 and 12
+ begin
+		insert into @erg select a.lnr, lname, aname, 
+						 convert(char(10), ldatum, 104)
+						 from lieferant a join lieferung b on a.lnr = b.lnr
+						 join artikel c on b.anr = c.anr
+						 where datepart(mm,ldatum) = cast(@monat as int);
+  end;
+ end;
+  return;
+end;
+go
+
+select * from fk_liefmonat('8');
+select * from fk_liefmonat('August');
+go
+
+-- TRIGGER
+-- DML Trigger und DDL Trigger
+
+-- DML Trigger
+-- 1. After Trigger
+--		werden ausgeloest nachdem das ausloesende Ereignis
+--		stattgefunden hat
+--		sind immer an die Ausloesende Transaktion (DML Anweisung)
+--		gebunden
+--		koennen nur an Basistabellen gebunden werden
+-- 2. INSTAED OF Trigger
+--		werden ausgeloest bevor das ausloesende Ereignis ausgefuehrt wurde
+--		koennen an Tabellen und Sichten gebunden werden
+
+-- fuer alle Trigger gilt:
+-- sie sollten keine Resultsets zurueckgeben.
+-- sie sollten nicht rekursiv stattfinden (weder indirekt noch direkt)
+-- Trigger nicht schachteln
+-- es gibt bei Triggern keine Reihenfolge bei der Ausfuehrung.
+
+-- Trigger werden in den Katalogsichten sys.objects, sys.sql_modules,
+-- sys.triggers und sys.trigger_events gespeichert
+
+-- INSERT TRIGGER
+-- wenn auf die Triggertabelle eine Insert Anweisung durchgefuehrt wird,
+-- wird der Trigger ausgeloest.
+-- bildet die logische Tabelle INSERTED. In dieser befinden sich
+-- die gerade aufgenommen Datensaetze
+
+-- Bsp. Wird eine Lieferuzng aufgernommen, soll die Liefermenge
+--		zur Lagermenge des entsprechenden Artikels hinzugefuegt werden
+
+create trigger tr_liefneu
+on dbo.lieferung
+for insert
+as
+	update dbo.artikel
+	set amenge = amenge + lmenge
+	from dbo.artikel as a join inserted as b on a.anr = b.anr;
+go
+
+-- Test
+
+select * from artikel where anr = 'A06';					-- amenge = 500
+insert into lieferung values ('L03','A06',500,getdate());	 
+select * from artikel where anr = 'A06';					-- amenge = 1000
+go
+
+-- UPDATE TRIGGER
+-- wird ausgeloest wenn auf die Triggertabelle eine Update Anweisung
+-- ausgefuehrt wird
+-- es werden die logischen Tabellen Inserted und Deleted gebildet
+-- in Inserted steht der/die Datensaetze nach dem Update
+-- in Deleted steht der/die Datensaetze vor dem Update
+-- das heisst : in Inserted stehen die neuen geaenderten DS und
+--				in Deleted die Datensaetze wie sie vor der Aenderung waren
+
+/*
+Bei Kontrollen der Lieferungen im Lager wird festgestellt, dass die
+letzte Lieferung fuer den Artikel A06 nicht stimmt. Es wurde A05 geliefert.
+Ein Trigger soll die Lagermengen der betroffenen Artikel anpassen.
+*/
+
+create trigger tr_anrneu
+on dbo. lieferung
+for update
+as
+	update dbo.artikel
+	set amenge = amenge - lmenge
+	from dbo.artikel as a join deleted as b on a.anr = b.anr;
+
+	update dbo.artikel
+	set amenge = amenge + lmenge
+	from dbo.artikel as a join inserted as b on a.anr = b.anr;
+go
+
+select * from artikel where anr = 'A06';	-- amenge = 1000
+select * from artikel where anr = 'A05';	-- amenge = 1000
+
+update lieferung
+set anr = 'A05'
+where anr = 'A06' and lnr = 'L03'
+and convert(char(10),ldatum,104) = convert(char(10),getdate(),104);
+
+select * from artikel where anr = 'A06';	-- amenge = 500
+select * from artikel where anr = 'A05';	-- amenge = 1800
+go
+
+-- DELETE Trigger
+-- wird ausgeloest wenn auf die Trigertabelle eine delete - Anweisung
+-- ausgefuehrt wird
+-- er bildet die logische Tabelle deleted, in welcher die gerade
+-- gekoesachten DS stehen
+
+/*
+Die heute aufgenommen Lieferung von L03 und dem Artikel A05
+spll geloescht werden. Ein Trigger soll die entsprechende Lagermenge
+anpassen
+*/
+
+create trigger tr_liefweg
+on dbo.lieferung
+for delete
+as
+	update dbo.artikel
+	set amenge = amenge - lmenge
+	from dbo.artikel as a join deleted as b on a.anr = b.anr;	
+go
+
+-- Test
+
+select * from artikel where anr = 'A05';				-- amenge = 1800
+
+delete lieferung
+where anr = 'A05' and lnr = 'L03'
+and convert(char(10),ldatum,104) = convert(char(10),getdate(),104);
+
+select * from artikel where anr = 'A05';				-- amnege = 1300
+
+-- zeige mir alle Lieferungne von heute
+
+select * from lieferung where ldatum = '30.06.2022';
 
 
 
