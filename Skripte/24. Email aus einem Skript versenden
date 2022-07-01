@@ -1,0 +1,32 @@
+use standard;
+go
+
+-- E-mails aus einem Skript versenden
+-- dafuer wird die Prozedur sp_send_dbmail verwendet
+
+/*
+Wir schreiben eine Abfrage welche die Nummern, die Namen und die Anzahl
+der Lieferungen der jeweiligen Lieferanten anzeigt.
+Das Ergebnis soll per Database E-mail an die Empfaenger verschickt werden
+es ist moeglich das Ergebnis im Body der E-mail oder als Dateianhang zu versenden
+*/
+
+declare @erg nvarchar(max);
+set @erg = (select a.lnr, '   ',  lname , '   ', anz ,  ',      '
+			from standard.dbo.lieferant as a
+			join (select lnr, count(*) as anz  from standard.dbo.lieferung
+				group by lnr) as b on a.lnr = b.lnr
+			for xml auto, elements);
+
+exec msdb.dbo.sp_send_dbmail
+	@profile_name = 'Mein SQL Server',
+	@recipients = 'Maik.Schoeppach@training.erfurt.iad.de',
+	@query = 'select a.lnr, lname, anz      
+			  from standard.dbo.lieferant as a
+			  join (select lnr, count(*) as anz  from standard.dbo.lieferung
+			  group by lnr) as b on a.lnr = b.lnr',
+	@subject = 'Wichtige Information',
+	@attach_query_result_as_file = 1,
+	@body_Format = 'HTML';
+go
+
