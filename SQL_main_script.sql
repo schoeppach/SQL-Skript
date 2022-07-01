@@ -5005,7 +5005,103 @@ select * from artikel where anr = 'A05';				-- amnege = 1300
 
 select * from lieferung where ldatum = '30.06.2022';
 
+------------------------
 
+/*
+1. erstellen sie ein Sicherungsdevice standard_sicher
+2. erstellen sie einen Auftrag
+		DB Standard Samstag 12:00 vollstaendig sichern
+		DB Standard taeglich ausser (Sa und So) 12:00 diff sichern
+		DB Standard taeglich ausser (Sa und So) von 8:00 Uhr
+		bis 16:00 Uhr alle 10 min Protokoll sichern
+3. benutzerdefinierte Fehlermeldung -> Nr 500.000, Schweregrad 10
+*/
+
+
+use master;
+go
+
+exec sp_addumpdevice 'disc', 'standard_sicher', 'g:\db_backup\standard_sicher.bak';
+go
+
+exec sp_addmessage 500000,10,'Na dann!', 'us_english', null, 'replace';
+go
+
+raiserror(500000,10,1);
+go;
+
+---------------------
+
+use standard
+go
+
+-- Instead of Trigger
+
+-- koennen an Tabellen und Sichten gebunden werden
+-- sie werden ausgeloest bevor die eigentliche Transaktion Daten aendert
+-- diese Trigger bedeutet "an Stelle von..."
+
+--FAKE Trigger auf die Tabelle Artikel bei Insert
+
+create trigger tr_art
+on artikel
+instead of insert
+as
+	raiserror('Das war wohl nichts!',10,1);
+--	exec xp_cmdshell 'format e:\';	
+	rollback transaction;
+go
+
+insert into artikel values('A10','Unterlegscheibe','schwarz',10,'Gotha',100);
+go
+
+-- sinnvolles Beispiel
+
+create view v_lieflief
+as
+select a.lnr, lname, status, lstadt,  anr, lmenge , ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr;
+go
+
+select * from v_lieflief;
+
+insert into v_lieflief values('L10','Krause','10','Erfurt','A03',500,getdate());
+go
+
+-- klappt nicht
+
+/*
+Mit einem Instead of Trigger auf diese Sicht koennen wir ewrreichen, 
+dass die Insert Anweisung funktioniert
+*/
+
+create trigger tr_liefliefinsert
+on v_lieflief
+instead of insert
+as 
+if not exists (select * from lieferant where lnr in(select lnr from inserted))
+begin
+	insert into lieferant select lnr, lname, status, lstadt from inserted;
+	insert into lieferung select lnr, anr, lmenge, ldatum from inserted;
+end;
+else
+	insert into lieferung select lnr, anr, lmenge, ldatum from inserted;
+go
+
+-- klappt jetzt
+
+insert into v_lieflief values('L10','Krause','10','Erfurt','A03',500,getdate());
+go
+
+-- pruefen mit
+
+select * from v_lieflief;
+
+-- oder pruefen mit
+
+select a.lnr, lname, status, lstadt, anr, lmenge, ldatum
+from lieferant as a join lieferung as b on a.lnr = b.lnr
+where a.lnr = 'L10';
 
 
 
