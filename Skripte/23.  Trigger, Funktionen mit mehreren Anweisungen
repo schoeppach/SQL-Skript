@@ -204,7 +204,7 @@ select * from artikel where anr = 'A05';				-- amnege = 1300
 
 select * from lieferung where ldatum = '30.06.2022';
 
-TAG 24 
+------------
 
 /*
 1. erstellen sie ein Sicherungsdevice standard_sicher
